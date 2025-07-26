@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:schoolhq_ng/core/constants/constants.dart';
 import 'package:schoolhq_ng/provider/school_provider.dart';
-import 'package:schoolhq_ng/views/auth/select_school_screen.dart';
 import 'package:schoolhq_ng/views/onboarding/onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
