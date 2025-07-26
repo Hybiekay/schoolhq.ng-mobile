@@ -58,8 +58,8 @@ class _SelectSchoolScreenState extends State<SelectSchoolScreen> {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            icon: const Icon(Icons.qr_code_scanner),
-            label: const Text("Scan QR"),
+            icon: const Icon(Icons.qr_code_scanner, color: AppColors.white),
+            label: Text("Scan QR", style: AppTextStyles.body),
             onPressed: () {
               // TODO: Implement QR scanner
             },
