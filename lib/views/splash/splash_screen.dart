@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:schoolhq_ng/core/constants/constants.dart';
 import 'package:schoolhq_ng/provider/school_provider.dart';
 import 'package:schoolhq_ng/views/auth/select_school_screen.dart';
 
@@ -48,7 +49,7 @@ class _SplashScreenState extends State<SplashScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Image.asset('assets/school_logo.png', height: 100), // Your logo
+              Image.asset(AppImages.logo, height: 100), // Your logo
               const SizedBox(height: 20),
               Text(
                 "SchoolHQ",
