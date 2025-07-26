@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:schoolhq_ng/core/constants/constants.dart';
 import 'package:schoolhq_ng/routes/app_routes.dart';
@@ -60,7 +62,61 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: Column(
                       children: [
                         const SizedBox(height: 40),
-                        Image.asset(page['image']!, height: 250),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            height: 450,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 10,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                Image.asset(
+                                  page['image']!,
+
+                                  height: 450,
+
+                                  fit: BoxFit.cover,
+                                ),
+                                BackdropFilter(
+                                  filter: ImageFilter.blur(
+                                    sigmaX: 10,
+                                    sigmaY: 10,
+                                  ),
+                                  child: Container(
+                                    color: Colors.white.withOpacity(
+                                      0.1,
+                                    ), // adjust for more/less blur
+                                  ),
+                                ),
+                                Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(15.0),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Image.asset(
+                                        page['image']!,
+                                        height: 450,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: 40),
                         Text(
                           page['title']!,
