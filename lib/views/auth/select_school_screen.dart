@@ -67,7 +67,12 @@ class _SelectSchoolScreenState extends State<SelectSchoolScreen> {
           const SizedBox(height: 16),
           Expanded(
             child: filtered.isEmpty
-                ? const Center(child: Text('No schools found'))
+                ? GestureDetector(
+                    onTap: () {
+                      Navigator.pushReplacementNamed(context, AppRoutes.login);
+                    },
+                    child: const Center(child: Text('No schools found')),
+                  )
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: filtered.length,
