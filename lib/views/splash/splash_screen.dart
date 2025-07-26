@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:schoolhq_ng/core/constants/constants.dart';
 import 'package:schoolhq_ng/provider/school_provider.dart';
 import 'package:schoolhq_ng/views/auth/select_school_screen.dart';
+import 'package:schoolhq_ng/views/onboarding/onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -35,7 +36,7 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(seconds: 3));
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => const SelectSchoolScreen()),
+      MaterialPageRoute(builder: (_) => const OnboardingScreen()),
     );
   }
 

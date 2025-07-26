@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'SchoolHQ',
       theme: ThemeData(primarySwatch: Colors.indigo),
-      initialRoute: AppRoutes.login,
+      initialRoute: AppRoutes.splash,
       routes: {
         AppRoutes.splash: (_) => const SplashScreen(),
         AppRoutes.onboarding: (_) => const OnboardingScreen(),

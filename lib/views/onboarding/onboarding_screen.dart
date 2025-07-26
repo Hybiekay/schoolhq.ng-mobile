@@ -25,7 +25,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       'title': 'Connect & Learn',
       'subtitle':
           'Interact with teachers, classmates, and stay updated through chat and notifications.',
-      'image': AppImages.qrIllustration,
+      'image': AppImages.student,
     },
     {
       'title': 'Track Your Progress',
