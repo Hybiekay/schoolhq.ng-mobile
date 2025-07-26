@@ -111,7 +111,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               children: [
                                 Image.asset(
                                   page['image']!,
-
                                   height: 450,
 
                                   fit: BoxFit.cover,
