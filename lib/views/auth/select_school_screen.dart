@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:schoolhq_ng/core/constants/app_colors.dart';
 import 'package:schoolhq_ng/core/constants/app_text_styles.dart';
+import 'package:schoolhq_ng/models/school_model.dart';
 import 'package:schoolhq_ng/provider/school_provider.dart';
 import 'package:schoolhq_ng/routes/app_routes.dart';
+import 'package:schoolhq_ng/views/widgets/qr_scanner_screen.dart';
 
 class SelectSchoolScreen extends StatefulWidget {
   const SelectSchoolScreen({super.key});
@@ -59,9 +61,34 @@ class _SelectSchoolScreenState extends State<SelectSchoolScreen> {
               ),
             ),
             icon: const Icon(Icons.qr_code_scanner, color: AppColors.white),
-            label: Text("Scan QR", style: AppTextStyles.body),
-            onPressed: () {
-              // TODO: Implement QR scanner
+            label: Text("Scan QR", style: AppTextStyles.button),
+            onPressed: () async {
+              final scannedSchoolId = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const QrScannerScreen()),
+              );
+
+              if (scannedSchoolId != null) {
+                SchoolModel? matchedSchool = schools.firstWhere(
+                  (school) => school.id.toString() == scannedSchoolId,
+                  orElse: () => SchoolModel(id: '', name: '', location: ''),
+                );
+                if (matchedSchool.id == '') {
+                  matchedSchool = null;
+                }
+
+                if (matchedSchool != null) {
+                  await Provider.of<SchoolProvider>(
+                    context,
+                    listen: false,
+                  ).selectSchool(matchedSchool);
+                  Navigator.pushReplacementNamed(context, AppRoutes.login);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('School not found from QR')),
+                  );
+                }
+              }
             },
           ),
           const SizedBox(height: 16),
