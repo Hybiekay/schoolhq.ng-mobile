@@ -1,30 +1,33 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:schoolhq_ng/core/constants/app_colors.dart';
-import 'package:schoolhq_ng/core/constants/app_text_styles.dart';
-import 'package:schoolhq_ng/models/school_model.dart';
-import 'package:schoolhq_ng/provider/school_provider.dart';
-import 'package:schoolhq_ng/routes/app_routes.dart';
-import 'package:schoolhq_ng/views/widgets/qr_scanner_screen.dart';
+import 'dart:io' show Platform;
 
-class SelectSchoolScreen extends StatefulWidget {
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:schoolhq_ng/core/constants/constants.dart';
+import 'package:schoolhq_ng/providers/school_provider.dart';
+import 'package:go_router/go_router.dart';
+import '../widgets/qr_scanner_screen.dart';
+
+class SelectSchoolScreen extends ConsumerStatefulWidget {
   const SelectSchoolScreen({super.key});
 
   @override
-  State<SelectSchoolScreen> createState() => _SelectSchoolScreenState();
+  ConsumerState<SelectSchoolScreen> createState() => _SelectSchoolScreenState();
 }
 
-class _SelectSchoolScreenState extends State<SelectSchoolScreen> {
+class _SelectSchoolScreenState extends ConsumerState<SelectSchoolScreen> {
   String query = '';
 
   @override
   Widget build(BuildContext context) {
-    final schools = Provider.of<SchoolProvider>(context).schools;
-    final filtered = schools
-        .where(
-          (school) => school.name.toLowerCase().contains(query.toLowerCase()),
-        )
-        .toList();
+    //   final schools = ref.watch(schoolProvider);
+    final filtered = [];
+
+    // Skip school selection on Web
+    if (kIsWeb) {
+      Future.microtask(() => context.go('/login'));
+      return const SizedBox.shrink();
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -53,6 +56,7 @@ class _SelectSchoolScreenState extends State<SelectSchoolScreen> {
               onChanged: (val) => setState(() => query = val),
             ),
           ),
+
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
@@ -63,31 +67,21 @@ class _SelectSchoolScreenState extends State<SelectSchoolScreen> {
             icon: const Icon(Icons.qr_code_scanner, color: AppColors.white),
             label: Text("Scan QR", style: AppTextStyles.button),
             onPressed: () async {
-              final scannedSchoolId = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const QrScannerScreen()),
-              );
-
-              if (scannedSchoolId != null) {
-                SchoolModel? matchedSchool = schools.firstWhere(
-                  (school) => school.id.toString() == scannedSchoolId,
-                  orElse: () => SchoolModel(id: '', name: '', location: ''),
+              if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+                final scannedSchoolId = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const QrScannerScreen()),
                 );
-                if (matchedSchool.id == '') {
-                  matchedSchool = null;
-                }
 
-                if (matchedSchool != null) {
-                  await Provider.of<SchoolProvider>(
-                    context,
-                    listen: false,
-                  ).selectSchool(matchedSchool);
-                  Navigator.pushReplacementNamed(context, AppRoutes.login);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('School not found from QR')),
-                  );
+                if (scannedSchoolId != null) {
+                  // handle scanned school ID like before
                 }
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("QR scanning is only available on mobile."),
+                  ),
+                );
               }
             },
           ),
@@ -95,9 +89,7 @@ class _SelectSchoolScreenState extends State<SelectSchoolScreen> {
           Expanded(
             child: filtered.isEmpty
                 ? GestureDetector(
-                    onTap: () {
-                      Navigator.pushReplacementNamed(context, AppRoutes.login);
-                    },
+                    onTap: () => context.go('/login'),
                     child: const Center(child: Text('No schools found')),
                   )
                 : ListView.builder(
@@ -122,15 +114,10 @@ class _SelectSchoolScreenState extends State<SelectSchoolScreen> {
                             style: AppTextStyles.small,
                           ),
                           onTap: () async {
-                            await Provider.of<SchoolProvider>(
-                              context,
-                              listen: false,
-                            ).selectSchool(school);
-
-                            Navigator.pushReplacementNamed(
-                              context,
-                              AppRoutes.login,
-                            );
+                            ref
+                                .read(schoolProvider.notifier)
+                                .selectSchool(school);
+                            context.go('/login');
                           },
                         ),
                       );

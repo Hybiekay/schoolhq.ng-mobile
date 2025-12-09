@@ -1,79 +1,53 @@
-import 'dart:async';
-import 'dart:ui';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:schoolhq_ng/core/constants/constants.dart';
-import 'package:schoolhq_ng/routes/app_routes.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
-  late Timer _autoScrollTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    _autoScrollTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
-      if (_currentIndex < _pages.length - 1) {
-        _pageController.nextPage(
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-        );
-      } else {
-        // Reset to first page (or stop timer if you want)
-        _pageController.animateToPage(
-          0,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-        );
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _autoScrollTimer.cancel();
-    _pageController.dispose();
-    super.dispose();
-  }
 
   final List<Map<String, String>> _pages = [
     {
       'title': 'Explore Your School',
-      'subtitle':
-          'Get instant access to announcements, timetable, and calendar right on your phone.',
+      'subtitle': 'Get access to announcements, timetable & calendar.',
       'image': AppImages.splashIllustration,
     },
     {
       'title': 'Connect & Learn',
-      'subtitle':
-          'Interact with teachers, classmates, and stay updated through chat and notifications.',
+      'subtitle': 'Interact with teachers, classmates, stay updated.',
       'image': AppImages.student,
     },
     {
       'title': 'Track Your Progress',
-      'subtitle':
-          'Monitor your academic performance, attendance, and achievements easily.',
+      'subtitle': 'Monitor your academic performance & attendance.',
       'image': AppImages.emptyState,
     },
   ];
 
   void _completeOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('onboarding_done', true);
-    Navigator.pushReplacementNamed(context, AppRoutes.selectSchool);
+    // await completeOnboarding(ref);
+
+    // Navigate after onboarding
+    context.go('/select-school');
   }
 
   @override
   Widget build(BuildContext context) {
+    if (kIsWeb) {
+      // Skip onboarding on web
+      Future.microtask(() => context.go('/login'));
+      return const SizedBox.shrink();
+    }
+
     return Scaffold(
       backgroundColor: AppColors.white,
       body: SafeArea(
@@ -84,81 +58,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 controller: _pageController,
                 itemCount: _pages.length,
                 onPageChanged: (index) => setState(() => _currentIndex = index),
-                itemBuilder: (context, index) {
+                itemBuilder: (_, index) {
                   final page = _pages[index];
-                  return Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 40),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Container(
-                            height: 450,
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black12,
-                                  blurRadius: 10,
-                                  offset: Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                Image.asset(
-                                  page['image']!,
-                                  height: 450,
-
-                                  fit: BoxFit.cover,
-                                ),
-                                BackdropFilter(
-                                  filter: ImageFilter.blur(
-                                    sigmaX: 10,
-                                    sigmaY: 10,
-                                  ),
-                                  child: Container(
-                                    color: Colors.white.withOpacity(
-                                      0.1,
-                                    ), // adjust for more/less blur
-                                  ),
-                                ),
-                                Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(15.0),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: Image.asset(
-                                        page['image']!,
-                                        height: 450,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 40),
-                        Text(
-                          page['title']!,
-                          style: AppTextStyles.headingLarge,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          page['subtitle']!,
-                          style: AppTextStyles.subtitle,
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset(page['image']!, height: 300),
+                      const SizedBox(height: 24),
+                      Text(
+                        page['title']!,
+                        style: AppTextStyles.headingLarge,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        page['subtitle']!,
+                        style: AppTextStyles.subtitle,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   );
                 },
               ),
@@ -190,16 +108,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: Text('Skip', style: AppTextStyles.body),
                   ),
                   ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
                     onPressed: () {
                       if (_currentIndex == _pages.length - 1) {
                         _completeOnboarding();
@@ -210,6 +118,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         );
                       }
                     },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                    ),
                     child: Text(
                       _currentIndex == _pages.length - 1
                           ? 'Get Started'
