@@ -359,7 +359,7 @@ class _SignUpPrompt extends StatelessWidget {
           style: AppTextStyles.body.copyWith(color: Colors.grey.shade600),
         ),
         TextButton(
-          onPressed: () => context.push('/register'),
+          onPressed: () => context.go('/register'),
           style: TextButton.styleFrom(
             padding: EdgeInsets.zero,
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,

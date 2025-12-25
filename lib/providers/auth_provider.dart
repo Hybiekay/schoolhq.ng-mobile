@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:hive/hive.dart';
 import 'package:flint_client/flint_client.dart';
+import 'package:schoolhq_ng/enum/user_role.dart';
 
 import '../repositories/auth_repository.dart';
 
@@ -64,5 +65,45 @@ class AuthController extends StateNotifier<bool> {
   void logout() {
     Hive.box('app').delete('token');
     state = false;
+  }
+
+  Future<void> register({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String phone,
+    required String password,
+    required UserRole role,
+    String? studentId,
+    String? staffId,
+  }) async {
+    // state = state.copyWith(isLoading: true);
+
+    // try {
+    //   // Your API call for registration
+    //   final response = await _authService.register({
+    //     'firstName': firstName,
+    //     'lastName': lastName,
+    //     'email': email,
+    //     'phone': phone,
+    //     'password': password,
+    //     'role': role.name,
+    //     if (studentId != null) 'studentId': studentId,
+    //     if (staffId != null) 'staffId': staffId,
+    //   });
+
+    //   // Handle response
+    //   state = state.copyWith(
+    //     isLoading: false,
+    //     user: response.user,
+    //     token: response.token,
+    //   );
+
+    //   // Save to Hive/local storage
+    //   await _saveAuthData(response);
+    // } catch (e) {
+    //   state = state.copyWith(isLoading: false, error: e.toString());
+    //   rethrow;
+    // }
   }
 }
