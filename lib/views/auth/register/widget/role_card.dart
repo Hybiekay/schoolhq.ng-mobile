@@ -8,6 +8,7 @@ class RoleCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const RoleCard({
+    super.key,
     required this.role,
     required this.isSelected,
     required this.onTap,

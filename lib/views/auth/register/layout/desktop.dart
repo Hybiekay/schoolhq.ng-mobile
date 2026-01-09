@@ -97,8 +97,7 @@ class DesktopLayout extends StatelessWidget {
                       ],
                     ),
 
-                    // const Spacer(),
-
+                    const SizedBox(height: 20),
                     // Hero Text
                     Text(
                       'Join Our Educational Community',
@@ -110,7 +109,7 @@ class DesktopLayout extends StatelessWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
                     Text(
                       'Create your account to access personalized learning experiences, track progress, and connect with your educational community.',
@@ -133,21 +132,21 @@ class DesktopLayout extends StatelessWidget {
                           description:
                               'Access courses, assignments, and grades tailored to your role',
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
                         FeatureItem(
                           icon: Icons.timeline_outlined,
                           title: 'Progress Tracking',
                           description:
                               'Monitor academic progress with detailed analytics and reports',
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
                         FeatureItem(
                           icon: Icons.group_outlined,
                           title: 'Community Connection',
                           description:
                               'Connect with teachers, students, and parents in one platform',
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
                         FeatureItem(
                           icon: Icons.security_outlined,
                           title: 'Secure & Private',
@@ -157,7 +156,7 @@ class DesktopLayout extends StatelessWidget {
                       ],
                     ),
 
-                    // const Spacer(),
+                    const SizedBox(height: 20),
 
                     // Stats/Testimonials
                     Container(
@@ -733,12 +732,12 @@ class DesktopLayout extends StatelessWidget {
           ],
         ),
 
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
 
         // Password Strength Indicator
         PasswordStrengthIndicator(password: passwordController.text),
 
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
 
         // Password Requirements
         Container(
@@ -769,7 +768,7 @@ class DesktopLayout extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
 
         // Terms and Conditions
         TermsCheckbox(

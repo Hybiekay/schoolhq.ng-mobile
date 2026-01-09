@@ -25,34 +25,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const SelectSchoolScreen(),
       ),
       GoRoute(path: RouteNames.login, builder: (_, __) => const LoginScreen()),
+
+      /// ================= REGISTER FLOW =================
       GoRoute(
         path: RouteNames.register,
         redirect: (_, __) => RouteNames.registerRole,
-        routes: [
-          GoRoute(
-            path: RouteNames.registerDetailsSegment,
-            name: 'register-details',
-            builder: (_, __) => const RegistrationScreen(step: 1),
-          ),
-          GoRoute(
-            path: RouteNames.registerRoleSegment,
-            name: 'register-role', // Named route for context.goNamed()
-            builder: (_, __) => const RegistrationScreen(step: 0),
-          ),
-        ],
       ),
-      // GoRoute(
-      //   path: RouteNames.registerRoleSegment,
-      //   name: 'register-role', // Named route for context.goNamed()
-      //   builder: (_, __) => const RegistrationScreen(step: 0),
-      // ),
-      // GoRoute(
-      //   path: RouteNames.registerDetailsSegment,
-      //   name: 'register-details',
-      //   builder: (_, __) => const RegistrationScreen(step: 1),
-      // ),
+
       GoRoute(
-        path: RouteNames.registerSecuritySegment,
+        path: RouteNames.registerRole, // role
+        name: 'register-role',
+        builder: (_, __) => const RegistrationScreen(step: 0),
+      ),
+      GoRoute(
+        path: RouteNames.registerDetails, // details
+        name: 'register-details',
+        builder: (_, __) => const RegistrationScreen(step: 1),
+      ),
+      GoRoute(
+        path: RouteNames.registerSecurity, // security
         name: 'register-security',
         builder: (_, __) => const RegistrationScreen(step: 2),
       ),

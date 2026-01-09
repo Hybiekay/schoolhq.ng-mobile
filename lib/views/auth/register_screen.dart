@@ -8,6 +8,7 @@ import 'package:schoolhq_ng/utils/build_ext.dart';
 import 'package:schoolhq_ng/views/auth/register/layout/desktop.dart';
 import 'package:schoolhq_ng/views/auth/register/layout/mobile.dart';
 import 'package:schoolhq_ng/views/auth/register/layout/tablet.dart';
+import 'package:schoolhq_ng/views/auth/register/provider/registration_notifier.dart';
 
 class RegistrationScreen extends ConsumerStatefulWidget {
   final int step;
@@ -30,17 +31,10 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   final _childNameController = TextEditingController();
   final _childGradeController = TextEditingController();
 
-  UserRole? _selectedRole;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _loading = false;
-  int _currentStep = 0;
   bool _termsAccepted = false;
-  @override
-  void initState() {
-    _currentStep = widget.step;
-    super.initState();
-  }
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate() || !_termsAccepted) {
@@ -66,17 +60,17 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             email: _emailController.text.trim(),
             phone: _phoneController.text.trim(),
             password: _passwordController.text.trim(),
-            role: _selectedRole!,
-            studentId: _selectedRole == UserRole.student
+            role: ref.watch(registrationProvider).role!,
+            studentId: ref.watch(registrationProvider).role == UserRole.student
                 ? _studentIdController.text.trim()
                 : null,
-            staffId: _selectedRole == UserRole.staff
+            staffId: ref.watch(registrationProvider).role == UserRole.staff
                 ? _staffIdController.text.trim()
                 : null,
-            // childName: _selectedRole == UserRole.parent
+            // childName: ref.watch(registrationProvider).role == UserRole.parent
             //     ? _childNameController.text.trim()
             //     : null,
-            // childGrade: _selectedRole == UserRole.parent
+            // childGrade: ref.watch(registrationProvider).role == UserRole.parent
             //     ? _childGradeController.text.trim()
             //     : null,
           );
@@ -117,57 +111,43 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   }
 
   void _nextStep() {
-    if (_currentStep == 0) {
-      if (_selectedRole == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Please select your role'),
-            backgroundColor: Colors.orange.shade600,
-          ),
-        );
-        return;
-      }
-      if (!_formKey.currentState!.validate()) {
-        return;
-      }
+    final role = ref.read(registrationProvider).role;
+
+    if (widget.step == 0 && role == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select your role')));
+      return;
     }
 
-    if (_currentStep < 2) {
-      final nextStep = _currentStep + 1;
-      // Navigate to the corresponding route
-      switch (nextStep) {
-        case 1:
-          context.go(RouteNames.registerDetails);
-          print(RouteNames.registerDetails);
-          print(nextStep);
-          break;
-        case 2:
-          context.go(RouteNames.registerSecurity);
-          print(RouteNames.registerSecurity);
-
-          break;
-      }
-    } else if (_formKey.currentState!.validate() && _termsAccepted) {
-      _register();
-    } else if (!_termsAccepted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please accept the terms and conditions'),
-          backgroundColor: Colors.orange.shade600,
-        ),
-      );
+    switch (widget.step) {
+      case 0:
+        context.go(RouteNames.registerDetails);
+        break;
+      case 1:
+        context.go(RouteNames.registerSecurity);
+        break;
+      case 2:
+        if (_termsAccepted) {
+          _register();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please accept the terms and conditions'),
+            ),
+          );
+        }
+        break;
     }
   }
 
   void _previousStep() {
-    if (_currentStep > 0) {
-      final prevStep = _currentStep - 1;
-      // Navigate to the corresponding route
-      switch (prevStep) {
-        case 0:
+    if (widget.step > 0) {
+      switch (widget.step) {
+        case 1:
           context.go(RouteNames.registerRole);
           break;
-        case 1:
+        case 2:
           context.go(RouteNames.registerDetails);
           break;
       }
@@ -195,13 +175,6 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_currentStep != widget.step) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        setState(() {
-          _currentStep = widget.step;
-        });
-      });
-    }
     if (context.isDesktop) {
       return DesktopLayout(
         formKey: _formKey,
@@ -215,13 +188,15 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         staffIdController: _staffIdController,
         childNameController: _childNameController,
         childGradeController: _childGradeController,
-        selectedRole: _selectedRole,
-        currentStep: _currentStep,
+        selectedRole: ref.watch(registrationProvider).role,
+        currentStep: widget.step,
         loading: _loading,
         termsAccepted: _termsAccepted,
         obscurePassword: _obscurePassword,
         obscureConfirmPassword: _obscureConfirmPassword,
-        onRoleSelected: (role) => setState(() => _selectedRole = role),
+        onRoleSelected: (role) {
+          ref.read(registrationProvider.notifier).setRole(role);
+        },
         onTogglePassword: () =>
             setState(() => _obscurePassword = !_obscurePassword),
         onToggleConfirmPassword: () =>
@@ -248,8 +223,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         staffIdController: _staffIdController,
         childNameController: _childNameController,
         childGradeController: _childGradeController,
-        selectedRole: _selectedRole,
-        currentStep: _currentStep,
+        selectedRole: ref.watch(registrationProvider).role,
+        currentStep: widget.step,
         loading: _loading,
         termsAccepted: _termsAccepted,
         onChanged: (v) {
@@ -257,7 +232,9 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         },
         obscurePassword: _obscurePassword,
         obscureConfirmPassword: _obscureConfirmPassword,
-        onRoleSelected: (role) => setState(() => _selectedRole = role),
+        onRoleSelected: (role) {
+          ref.read(registrationProvider.notifier).setRole(role);
+        },
         onTogglePassword: () =>
             setState(() => _obscurePassword = !_obscurePassword),
         onToggleConfirmPassword: () =>
@@ -281,8 +258,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         staffIdController: _staffIdController,
         childNameController: _childNameController,
         childGradeController: _childGradeController,
-        selectedRole: _selectedRole,
-        currentStep: _currentStep,
+        selectedRole: ref.watch(registrationProvider).role,
+        currentStep: widget.step,
         onChanged: (v) {
           setState(() {});
         },
@@ -290,7 +267,9 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         termsAccepted: _termsAccepted,
         obscurePassword: _obscurePassword,
         obscureConfirmPassword: _obscureConfirmPassword,
-        onRoleSelected: (role) => setState(() => _selectedRole = role),
+        onRoleSelected: (role) {
+          ref.read(registrationProvider.notifier).setRole(role);
+        },
         onTogglePassword: () =>
             setState(() => _obscurePassword = !_obscurePassword),
         onToggleConfirmPassword: () =>
