@@ -5,11 +5,8 @@ import 'package:schoolhq_ng/core/constants/constants.dart';
 import 'package:schoolhq_ng/providers/mobile_provider.dart';
 import 'package:schoolhq_ng/routes/route_names.dart';
 import 'package:schoolhq_ng/views/home/exam/helpers/student_exam_helpers.dart';
-import 'package:schoolhq_ng/views/home/exam/widgets/student_exam_action_card.dart';
-import 'package:schoolhq_ng/views/home/exam/widgets/student_exam_instructions_card.dart';
-import 'package:schoolhq_ng/views/home/exam/widgets/student_exam_overview_card.dart';
+import 'package:schoolhq_ng/views/home/exam/widgets/student_exam_detail_body.dart';
 import 'package:schoolhq_ng/views/home/exam/widgets/student_exam_status_state.dart';
-import 'package:schoolhq_ng/views/home/exam/widgets/student_exam_submitted_card.dart';
 
 class StudentExamDetailScreen extends ConsumerStatefulWidget {
   final String examId;
@@ -66,7 +63,7 @@ class _StudentExamDetailScreenState
                 onRetry: () =>
                     ref.invalidate(mobileExamDetailProvider(widget.examId)),
               ),
-              data: (payload) => _DetailBody(
+              data: (payload) => StudentExamDetailBody(
                 examId: widget.examId,
                 payload: payload,
                 starting: _starting,
@@ -140,54 +137,5 @@ class _StudentExamDetailScreenState
         setState(() => _starting = false);
       }
     }
-  }
-}
-
-class _DetailBody extends ConsumerWidget {
-  final String examId;
-  final Map<String, dynamic> payload;
-  final bool starting;
-  final Future<void> Function(Map<String, dynamic>, Map<String, dynamic>) onStart;
-
-  const _DetailBody({
-    required this.examId,
-    required this.payload,
-    required this.starting,
-    required this.onStart,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final exam = examAsMap(payload['exam']);
-    final attempt = examAsMap(exam['attempt']);
-    final isSubmitted =
-        attempt['status']?.toString() == 'submitted' &&
-        (attempt['submitted_at']?.toString().isNotEmpty ?? false);
-
-    return RefreshIndicator(
-      onRefresh: () async => ref.refresh(mobileExamDetailProvider(examId).future),
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(20),
-        children: [
-          StudentExamOverviewCard(exam: exam),
-          const SizedBox(height: 16),
-          StudentExamInstructionsCard(
-            instructions:
-                exam['instructions']?.toString() ??
-                'Read each question carefully before answering.',
-          ),
-          const SizedBox(height: 16),
-          if (isSubmitted)
-            StudentExamSubmittedCard(exam: exam, attempt: attempt)
-          else
-            StudentExamActionCard(
-              attempt: attempt,
-              isBusy: starting,
-              onStart: () => onStart(exam, attempt),
-            ),
-        ],
-      ),
-    );
   }
 }
