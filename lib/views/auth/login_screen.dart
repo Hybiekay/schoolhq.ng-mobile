@@ -1,8 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:schoolhq_ng/core/constants/constants.dart';
+import 'package:schoolhq_ng/core/school/current_school.dart';
 import 'package:schoolhq_ng/providers/auth_provider.dart';
+import 'package:schoolhq_ng/routes/route_names.dart';
+import 'package:schoolhq_ng/widget/school_logo.dart';
 import 'package:schoolhq_ng/widget/responsive_layout.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -14,7 +18,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _email = TextEditingController();
+  final _loginController = TextEditingController();
   final _password = TextEditingController();
   bool _obscure = true;
   bool _loading = false;
@@ -27,7 +31,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     try {
       await ref
           .read(authProvider.notifier)
-          .login(_email.text.trim(), _password.text.trim());
+          .login(_loginController.text.trim(), _password.text.trim());
 
       // Use pushReplacement for better UX
       if (context.mounted) {
@@ -37,7 +41,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Login failed: ${e.toString()}'),
+            content: Text('Login failed: ${_friendlyError(e)}'),
             backgroundColor: Colors.red.shade600,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -55,53 +59,68 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   void dispose() {
-    _email.dispose();
+    _loginController.dispose();
     _password.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final school = currentSchool();
+
     return ResponsiveLayout(
       mobile: _LoginMobileContent(
+        schoolName: school.name,
+        schoolLogo: school.logo,
         formKey: _formKey,
-        email: _email,
+        login: _loginController,
         password: _password,
         obscure: _obscure,
         loading: _loading,
         onToggleObscure: () => setState(() => _obscure = !_obscure),
         onLogin: _login,
         onForgotPassword: () => context.push('/forgot-password'),
+        onChangeSchool: () => context.go(RouteNames.selectSchool),
       ),
       tablet: _LoginTabletContent(
+        schoolName: school.name,
+        schoolLogo: school.logo,
         formKey: _formKey,
-        email: _email,
+        login: _loginController,
         password: _password,
         obscure: _obscure,
         loading: _loading,
         onToggleObscure: () => setState(() => _obscure = !_obscure),
         onLogin: _login,
         onForgotPassword: () => context.push('/forgot-password'),
+        onChangeSchool: () => context.go(RouteNames.selectSchool),
       ),
       desktop: _LoginDesktopContent(
+        schoolName: school.name,
+        schoolLogo: school.logo,
         formKey: _formKey,
-        email: _email,
+        login: _loginController,
         password: _password,
         obscure: _obscure,
         loading: _loading,
         onToggleObscure: () => setState(() => _obscure = !_obscure),
         onLogin: _login,
         onForgotPassword: () => context.push('/forgot-password'),
+        onChangeSchool: () => context.go(RouteNames.selectSchool),
       ),
     );
   }
+}
+
+String _friendlyError(Object error) {
+  return error.toString().replaceFirst('Exception: ', '');
 }
 
 // Reusable Widgets
 
 class _LoginForm extends StatelessWidget {
   final GlobalKey<FormState> formKey;
-  final TextEditingController email;
+  final TextEditingController login;
   final TextEditingController password;
   final bool obscure;
   final bool loading;
@@ -111,7 +130,7 @@ class _LoginForm extends StatelessWidget {
 
   const _LoginForm({
     required this.formKey,
-    required this.email,
+    required this.login,
     required this.password,
     required this.obscure,
     required this.loading,
@@ -154,7 +173,7 @@ class _LoginForm extends StatelessWidget {
               ),
               const SizedBox(height: 32),
             ],
-            _EmailField(controller: email),
+            _LoginField(controller: login),
             const SizedBox(height: 20),
             _PasswordField(
               controller: password,
@@ -178,20 +197,20 @@ class _LoginForm extends StatelessWidget {
   }
 }
 
-class _EmailField extends StatelessWidget {
+class _LoginField extends StatelessWidget {
   final TextEditingController controller;
 
-  const _EmailField({required this.controller});
+  const _LoginField({required this.controller});
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
-      keyboardType: TextInputType.emailAddress,
+      keyboardType: TextInputType.text,
       style: AppTextStyles.body,
       decoration: InputDecoration(
-        hintText: 'Email Address',
-        prefixIcon: const Icon(Icons.email_outlined, size: 20),
+        hintText: 'Email, username, or reg number',
+        prefixIcon: const Icon(Icons.person_outline, size: 20),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.grey.shade300),
@@ -209,10 +228,7 @@ class _EmailField extends StatelessWidget {
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return 'Please enter your email';
-        }
-        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-          return 'Please enter a valid email';
+          return 'Please enter your email, username, or reg number';
         }
         return null;
       },
@@ -264,10 +280,7 @@ class _PasswordField extends StatelessWidget {
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return 'Please enter your password';
-        }
-        if (value.length < 6) {
-          return 'Password must be at least 6 characters';
+          return 'Please enter your password or reg number';
         }
         return null;
       },
@@ -346,11 +359,16 @@ class _LoginButton extends StatelessWidget {
   }
 }
 
-class _SignUpPrompt extends StatelessWidget {
+class _SignUpPrompt extends ConsumerWidget {
   const _SignUpPrompt();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final policy = ref.watch(registrationPolicyProvider);
+    if (!policy.selfRegistrationEnabled || policy.allowedRoles.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -380,24 +398,30 @@ class _SignUpPrompt extends StatelessWidget {
 // Responsive Layout Variations
 
 class _LoginMobileContent extends StatelessWidget {
+  final String schoolName;
+  final String schoolLogo;
   final GlobalKey<FormState> formKey;
-  final TextEditingController email;
+  final TextEditingController login;
   final TextEditingController password;
   final bool obscure;
   final bool loading;
   final VoidCallback onToggleObscure;
   final VoidCallback onLogin;
   final VoidCallback onForgotPassword;
+  final VoidCallback onChangeSchool;
 
   const _LoginMobileContent({
+    required this.schoolName,
+    required this.schoolLogo,
     required this.formKey,
-    required this.email,
+    required this.login,
     required this.password,
     required this.obscure,
     required this.loading,
     required this.onToggleObscure,
     required this.onLogin,
     required this.onForgotPassword,
+    required this.onChangeSchool,
   });
 
   @override
@@ -411,19 +435,26 @@ class _LoginMobileContent extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 40),
-              Image.asset(AppImages.logo, height: 60, width: 60),
+              SchoolLogo(logo: schoolLogo, size: 60, radius: 16),
+              const SizedBox(height: 16),
+              Text(schoolName, style: AppTextStyles.headingMedium),
+              const SizedBox(height: 12),
+              _SelectedSchoolBanner(
+                schoolName: schoolName,
+                onChangeSchool: onChangeSchool,
+              ),
               const SizedBox(height: 24),
               Text('Welcome Back', style: AppTextStyles.headingLarge),
               const SizedBox(height: 8),
               Text(
-                'Login to continue to your school dashboard',
+                'One login for students, teachers, parents, and admins',
                 style: AppTextStyles.subtitle,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 40),
               _LoginForm(
                 formKey: formKey,
-                email: email,
+                login: login,
                 password: password,
                 obscure: obscure,
                 loading: loading,
@@ -446,24 +477,30 @@ class _LoginMobileContent extends StatelessWidget {
 }
 
 class _LoginTabletContent extends StatelessWidget {
+  final String schoolName;
+  final String schoolLogo;
   final GlobalKey<FormState> formKey;
-  final TextEditingController email;
+  final TextEditingController login;
   final TextEditingController password;
   final bool obscure;
   final bool loading;
   final VoidCallback onToggleObscure;
   final VoidCallback onLogin;
   final VoidCallback onForgotPassword;
+  final VoidCallback onChangeSchool;
 
   const _LoginTabletContent({
+    required this.schoolName,
+    required this.schoolLogo,
     required this.formKey,
-    required this.email,
+    required this.login,
     required this.password,
     required this.obscure,
     required this.loading,
     required this.onToggleObscure,
     required this.onLogin,
     required this.onForgotPassword,
+    required this.onChangeSchool,
   });
 
   @override
@@ -478,18 +515,25 @@ class _LoginTabletContent extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset(AppImages.logo, height: 80, width: 80),
+                SchoolLogo(logo: schoolLogo, size: 80, radius: 20),
                 const SizedBox(height: 32),
+                Text(schoolName, style: AppTextStyles.headingMedium),
+                const SizedBox(height: 12),
+                _SelectedSchoolBanner(
+                  schoolName: schoolName,
+                  onChangeSchool: onChangeSchool,
+                ),
+                const SizedBox(height: 12),
                 Text('Welcome Back', style: AppTextStyles.headingLarge),
                 const SizedBox(height: 8),
                 Text(
-                  'Login to continue to your school dashboard',
+                  'One login for students, teachers, parents, and admins',
                   style: AppTextStyles.subtitle,
                 ),
                 const SizedBox(height: 40),
                 _LoginForm(
                   formKey: formKey,
-                  email: email,
+                  login: login,
                   password: password,
                   obscure: obscure,
                   loading: loading,
@@ -509,24 +553,30 @@ class _LoginTabletContent extends StatelessWidget {
 }
 
 class _LoginDesktopContent extends StatelessWidget {
+  final String schoolName;
+  final String schoolLogo;
   final GlobalKey<FormState> formKey;
-  final TextEditingController email;
+  final TextEditingController login;
   final TextEditingController password;
   final bool obscure;
   final bool loading;
   final VoidCallback onToggleObscure;
   final VoidCallback onLogin;
   final VoidCallback onForgotPassword;
+  final VoidCallback onChangeSchool;
 
   const _LoginDesktopContent({
+    required this.schoolName,
+    required this.schoolLogo,
     required this.formKey,
-    required this.email,
+    required this.login,
     required this.password,
     required this.obscure,
     required this.loading,
     required this.onToggleObscure,
     required this.onLogin,
     required this.onForgotPassword,
+    required this.onChangeSchool,
   });
 
   @override
@@ -548,10 +598,10 @@ class _LoginDesktopContent extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Image.asset(AppImages.logo, height: 48, width: 48),
+                        SchoolLogo(logo: schoolLogo, size: 48, radius: 12),
                         const SizedBox(width: 12),
                         Text(
-                          'SchoolHQ',
+                          schoolName,
                           style: AppTextStyles.headingLarge.copyWith(
                             color: AppColors.primary,
                           ),
@@ -559,6 +609,11 @@ class _LoginDesktopContent extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 60),
+                    _SelectedSchoolBanner(
+                      schoolName: schoolName,
+                      onChangeSchool: onChangeSchool,
+                    ),
+                    const SizedBox(height: 32),
                     Text(
                       'Transform Your\nSchool Experience',
                       style: AppTextStyles.headingLarge.copyWith(height: 1.2),
@@ -599,7 +654,7 @@ class _LoginDesktopContent extends StatelessWidget {
                   const SizedBox(height: 40),
                   _LoginForm(
                     formKey: formKey,
-                    email: email,
+                    login: login,
                     password: password,
                     obscure: obscure,
                     loading: loading,
@@ -618,6 +673,45 @@ class _LoginDesktopContent extends StatelessWidget {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SelectedSchoolBanner extends StatelessWidget {
+  final String schoolName;
+  final VoidCallback onChangeSchool;
+
+  const _SelectedSchoolBanner({
+    required this.schoolName,
+    required this.onChangeSchool,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.primary.withOpacity(0.12)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.apartment_rounded, color: AppColors.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              schoolName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.body,
+            ),
+          ),
+          if (!kIsWeb)
+            TextButton(onPressed: onChangeSchool, child: const Text('Change')),
         ],
       ),
     );

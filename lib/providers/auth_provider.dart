@@ -1,22 +1,31 @@
+import 'package:flint_client/flint_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:hive/hive.dart';
-import 'package:flint_client/flint_client.dart';
+import 'package:schoolhq_ng/core/hive/hive_key.dart';
+import 'package:schoolhq_ng/core/constants/registration_policy.dart';
+import 'package:schoolhq_ng/core/network/school_urls.dart';
 import 'package:schoolhq_ng/enum/user_role.dart';
 
 import '../repositories/auth_repository.dart';
+import 'school_provider.dart';
 
 /// Create global FlintClient instance
 final flintClientProvider = Provider<FlintClient>((ref) {
-  return FlintClient(
-    baseUrl: "https://api.schoolhq.ng/api",
-    timeout: const Duration(seconds: 15),
-  );
+  final selectedSchool = ref.watch(schoolProvider);
+  final baseUrl = resolveSchoolApiBaseUrl(selectedSchool);
+  return FlintClient(baseUrl: baseUrl, timeout: const Duration(seconds: 15));
 });
 
 /// Repository Provider
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(ref.read(flintClientProvider));
+});
+
+final registrationPolicyProvider = Provider<RegistrationPolicy>((ref) {
+  // Sandbox behavior requested: self registration is enabled.
+  // Replace with API-driven policy when backend exposes this setting.
+  return RegistrationPolicy.sandbox;
 });
 
 /// Auth State Provider (true = logged in)
@@ -33,37 +42,60 @@ class AuthController extends StateNotifier<bool> {
 
   /// Load session from Hive on app start
   void _loadToken() {
-    final token = Hive.box('app').get('token');
+    final token = Hive.box(HiveKey.boxApp).get(HiveKey.token);
     if (token != null) {
-      // Attach token to client for authenticated requests
-      final client = ref.read(flintClientProvider);
-      // client.requestInterceptor("Authorization", "Bearer $token");
-
       state = true;
     }
   }
 
   /// Login Action
-  Future<void> login(String email, String password) async {
+  Future<void> login(String login, String password) async {
     final authRepo = ref.read(authRepositoryProvider);
 
-    final data = await authRepo.login(email, password);
+    final data = await authRepo.login(login, password);
 
-    final token = data["token"];
+    final token = data["access_token"] ?? data["token"];
     if (token == null) throw Exception("Invalid token");
 
     // Save token
-    Hive.box('app').put('token', token);
-
-    // Attach token to client
-    // ref.read(flintClientProvider).setHeader("Authorization", "Bearer $token");
+    final box = Hive.box(HiveKey.boxApp);
+    box.put(HiveKey.token, token);
+    final role = _extractRole(data) ?? UserRole.student.name;
+    box.put(HiveKey.userRole, role);
+    final user = data['user'];
+    if (user != null) {
+      box.put(HiveKey.userProfile, user);
+    }
+    _storeSchool(box, data['school']);
 
     state = true;
   }
 
+  Future<void> syncBranding() async {
+    try {
+      final authRepo = ref.read(authRepositoryProvider);
+      final data = await authRepo.fetchBranding();
+      final box = Hive.box(HiveKey.boxApp);
+      _storeSchool(box, data['school']);
+    } catch (_) {
+      // Keep the last saved school branding or fallback when the API is unavailable.
+    }
+  }
+
   /// Logout Action
-  void logout() {
-    Hive.box('app').delete('token');
+  ///
+  /// Normal logout keeps the selected school in Hive so users can return
+  /// to the same school login screen. Pass `clearSchool: true` only when
+  /// the user explicitly wants to remove the saved school.
+  Future<void> logout({bool clearSchool = false}) async {
+    final box = Hive.box(HiveKey.boxApp);
+    box.delete(HiveKey.token);
+    box.delete(HiveKey.userRole);
+    box.delete(HiveKey.userProfile);
+    box.delete(HiveKey.selectedParentChildId);
+    if (clearSchool) {
+      ref.read(schoolProvider.notifier).clearSelection();
+    }
     state = false;
   }
 
@@ -75,35 +107,69 @@ class AuthController extends StateNotifier<bool> {
     required String password,
     required UserRole role,
     String? studentId,
-    String? staffId,
   }) async {
-    // state = state.copyWith(isLoading: true);
+    final policy = ref.read(registrationPolicyProvider);
+    if (!policy.selfRegistrationEnabled || !policy.isRoleAllowed(role)) {
+      throw Exception('Registration is currently disabled for this role');
+    }
 
-    // try {
-    //   // Your API call for registration
-    //   final response = await _authService.register({
-    //     'firstName': firstName,
-    //     'lastName': lastName,
-    //     'email': email,
-    //     'phone': phone,
-    //     'password': password,
-    //     'role': role.name,
-    //     if (studentId != null) 'studentId': studentId,
-    //     if (staffId != null) 'staffId': staffId,
-    //   });
+    final authRepo = ref.read(authRepositoryProvider);
+    await authRepo.register(
+      firstName: firstName,
+      lastName: lastName,
+      email: email,
+      phone: phone,
+      password: password,
+      role: role,
+      studentId: studentId,
+    );
+  }
 
-    //   // Handle response
-    //   state = state.copyWith(
-    //     isLoading: false,
-    //     user: response.user,
-    //     token: response.token,
-    //   );
+  String? _extractRole(Map<String, dynamic> data) {
+    final role = data['role'];
+    if (role is String && role.isNotEmpty) return role.toLowerCase();
 
-    //   // Save to Hive/local storage
-    //   await _saveAuthData(response);
-    // } catch (e) {
-    //   state = state.copyWith(isLoading: false, error: e.toString());
-    //   rethrow;
-    // }
+    final user = data['user'];
+    if (user is Map<String, dynamic>) {
+      final userRole = user['role'];
+      if (userRole is String && userRole.isNotEmpty) {
+        return userRole.toLowerCase();
+      }
+    }
+    return null;
+  }
+
+  void _storeSchool(Box box, dynamic school) {
+    final selectedSchool = box.get(HiveKey.selectedSchool);
+    final selectedMap = selectedSchool is Map<String, dynamic>
+        ? Map<String, dynamic>.from(selectedSchool)
+        : selectedSchool is Map
+        ? Map<String, dynamic>.from(selectedSchool)
+        : <String, dynamic>{};
+
+    final incomingMap = school is Map<String, dynamic>
+        ? Map<String, dynamic>.from(school)
+        : school is Map
+        ? Map<String, dynamic>.from(school)
+        : <String, dynamic>{};
+
+    if (incomingMap.isEmpty && selectedMap.isEmpty) {
+      return;
+    }
+
+    final merged = <String, dynamic>{...selectedMap, ...incomingMap};
+
+    // Keep the selected school's app URL as the primary request target unless
+    // the backend explicitly returns another usable app_url.
+    final selectedAppUrl =
+        (selectedMap['app_url'] ?? selectedMap['appUrl'] ?? '').toString();
+    final incomingAppUrl =
+        (incomingMap['app_url'] ?? incomingMap['appUrl'] ?? '').toString();
+
+    if (selectedAppUrl.isNotEmpty && incomingAppUrl.isEmpty) {
+      merged['app_url'] = selectedAppUrl;
+    }
+
+    box.put(HiveKey.userSchool, merged);
   }
 }

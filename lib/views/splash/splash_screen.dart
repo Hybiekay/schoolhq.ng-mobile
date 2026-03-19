@@ -3,7 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:go_router/go_router.dart';
-import 'package:schoolhq_ng/core/constants/constants.dart';
+import 'package:schoolhq_ng/core/hive/hive_key.dart';
+import 'package:schoolhq_ng/core/school/current_school.dart';
+import 'package:schoolhq_ng/models/school_model.dart';
+import 'package:schoolhq_ng/providers/auth_provider.dart';
+import 'package:schoolhq_ng/providers/school_provider.dart';
+import 'package:schoolhq_ng/routes/route_names.dart';
+import 'package:schoolhq_ng/widget/school_logo.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -70,19 +76,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     try {
       // Small delay to ensure animations start
       await Future.delayed(const Duration(milliseconds: 500));
-
       final isWeb = kIsWeb;
 
       // Use try-catch for Hive operations
       bool onboardingDone = false;
       dynamic schoolSelected;
       bool isLoggedIn = false;
+      bool schoolInactive = false;
 
       try {
         final appBox = Hive.box('app');
         onboardingDone = appBox.get('onboardingDone', defaultValue: false);
-        schoolSelected = appBox.get('selectedSchool', defaultValue: null);
-        isLoggedIn = appBox.get('token', defaultValue: null) != null;
+        schoolSelected = appBox.get(HiveKey.selectedSchool, defaultValue: null);
+        isLoggedIn = appBox.get(HiveKey.token, defaultValue: null) != null;
       } catch (e) {
         if (kDebugMode) {
           print('Hive error: $e');
@@ -92,12 +98,43 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         return;
       }
 
+      if (!isWeb) {
+        final selectedSchool = SchoolModel.fromDynamic(schoolSelected);
+        if (selectedSchool != null && selectedSchool.id.isNotEmpty) {
+          try {
+            final activeSchool = await ref
+                .read(schoolDirectoryRepositoryProvider)
+                .fetchActiveSchoolById(selectedSchool.id);
+
+            if (activeSchool == null) {
+              schoolInactive = true;
+              await ref.read(authProvider.notifier).logout();
+            } else {
+              ref.read(schoolProvider.notifier).selectSchool(activeSchool);
+              schoolSelected = activeSchool.toJson();
+            }
+          } catch (e) {
+            if (kDebugMode) {
+              print('School validation error: $e');
+            }
+          }
+        }
+      }
+
+      if (!schoolInactive) {
+        await ref.read(authProvider.notifier).syncBranding();
+        if (mounted) {
+          setState(() {});
+        }
+      }
+
       _handleNavigation(
         isWeb: isWeb,
         onboardingDone: onboardingDone,
         schoolSelected: schoolSelected,
         isLoggedIn: isLoggedIn,
-        hasError: true,
+        schoolInactive: schoolInactive,
+        hasError: false,
       );
     } catch (e) {
       if (kDebugMode) {
@@ -114,29 +151,35 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     bool onboardingDone = false,
     dynamic schoolSelected,
     bool isLoggedIn = false,
+    bool schoolInactive = false,
   }) {
     if (hasError) {
       // Error handling - navigate to login or error screen
-      context.go('/login');
+      context.go(RouteNames.login);
+      return;
+    }
+
+    if (schoolInactive) {
+      context.go(RouteNames.schoolInactive);
       return;
     }
 
     if (!isWeb && !onboardingDone) {
-      context.go('/onboarding');
+      context.go(RouteNames.onboarding);
       return;
     }
 
     if (!isWeb && schoolSelected == null) {
-      context.go('/select-school');
+      context.go(RouteNames.selectSchool);
       return;
     }
 
     if (!isLoggedIn) {
-      context.go('/login');
+      context.go(RouteNames.login);
       return;
     }
 
-    context.go('/home');
+    context.go(RouteNames.home);
   }
 
   @override
@@ -151,6 +194,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     final size = MediaQuery.sizeOf(context);
     final isMobile = size.width < 600;
     final isTablet = size.width >= 600 && size.width < 1200;
+    final school = currentSchool();
 
     return Scaffold(
       backgroundColor: const Color(0xFFeef1f8),
@@ -170,23 +214,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       opacity: _logoFade.value,
                       child: Column(
                         children: [
-                          Image.asset(
-                            AppImages.logo,
-                            height: isMobile
+                          SchoolLogo(
+                            logo: school.logo,
+                            size: isMobile
                                 ? 80
                                 : isTablet
                                 ? 120
                                 : 150,
-                            width: isMobile
-                                ? 80
-                                : isTablet
-                                ? 120
-                                : 150,
-                            fit: BoxFit.contain,
+                            radius: 24,
                           ),
                           const SizedBox(height: 24),
                           Text(
-                            "SchoolHQ",
+                            school.name,
                             style: TextStyle(
                               fontSize: isMobile
                                   ? 28

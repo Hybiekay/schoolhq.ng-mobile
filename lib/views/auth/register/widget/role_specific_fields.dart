@@ -5,7 +5,6 @@ import 'package:schoolhq_ng/widget/app_text_field.dart';
 class RoleSpecificFields extends StatelessWidget {
   final UserRole? selectedRole;
   final TextEditingController studentIdController;
-  final TextEditingController staffIdController;
   final TextEditingController childNameController;
   final TextEditingController childGradeController;
 
@@ -13,7 +12,6 @@ class RoleSpecificFields extends StatelessWidget {
     super.key,
     required this.selectedRole,
     required this.studentIdController,
-    required this.staffIdController,
     required this.childNameController,
     required this.childGradeController,
   });
@@ -75,25 +73,6 @@ class RoleSpecificFields extends StatelessWidget {
               style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 20),
-            AppTextField(
-              controller: TextEditingController(),
-              label: 'Subject/Department',
-              hintText: 'e.g., Mathematics, Science',
-              icon: Icons.subject_outlined,
-              enabled: false,
-              validator: null,
-            ),
-            const SizedBox(height: 16),
-            AppTextField(
-              controller: TextEditingController(),
-              label: 'Years of Experience',
-              hintText: 'Enter years of teaching experience',
-              icon: Icons.timeline_outlined,
-              enabled: false,
-              keyboardType: TextInputType.number,
-              validator: null,
-            ),
           ],
         );
 
@@ -141,69 +120,10 @@ class RoleSpecificFields extends StatelessWidget {
                 return null;
               },
             ),
-            const SizedBox(height: 16),
-            AppTextField(
-              controller: TextEditingController(),
-              label: 'Student ID (Optional)',
-              hintText: 'If you know your child\'s student ID',
-              icon: Icons.numbers_outlined,
-              enabled: false,
-              validator: null,
-            ),
           ],
         );
-
       case UserRole.staff:
-        return Column(
-          children: [
-            const SizedBox(height: 20),
-            Text(
-              'Staff Information',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade800,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Please provide your staff details for verification',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            AppTextField(
-              controller: staffIdController,
-              label: 'Staff ID *',
-              hintText: 'Enter your staff ID',
-              icon: Icons.work_outline,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Staff ID is required';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            AppTextField(
-              controller: TextEditingController(),
-              label: 'Department',
-              hintText: 'e.g., Administration, IT, Finance',
-              icon: Icons.business_outlined,
-              enabled: false,
-              validator: null,
-            ),
-            const SizedBox(height: 16),
-            AppTextField(
-              controller: TextEditingController(),
-              label: 'Position',
-              hintText: 'e.g., Administrator, Coordinator',
-              icon: Icons.work_history_outlined,
-              enabled: false,
-              validator: null,
-            ),
-          ],
-        );
+        return const SizedBox.shrink();
     }
   }
 }

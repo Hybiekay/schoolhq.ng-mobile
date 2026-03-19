@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:schoolhq_ng/core/constants/constants.dart';
+import 'package:schoolhq_ng/core/school/current_school.dart';
 import 'package:schoolhq_ng/enum/user_role.dart';
 import 'package:schoolhq_ng/views/auth/register/widget/password_strength_indicator.dart';
 import 'package:schoolhq_ng/views/auth/register/widget/role_card.dart';
@@ -8,6 +9,7 @@ import 'package:schoolhq_ng/views/auth/register/widget/role_specific_fields.dart
 import 'package:schoolhq_ng/views/auth/register/widget/terms_check_box.dart';
 import 'package:schoolhq_ng/widget/app_text_field.dart';
 import 'package:schoolhq_ng/widget/feature_item.dart';
+import 'package:schoolhq_ng/widget/school_logo.dart';
 
 class DesktopLayout extends StatelessWidget {
   final GlobalKey<FormState> formKey;
@@ -18,10 +20,10 @@ class DesktopLayout extends StatelessWidget {
   final TextEditingController passwordController;
   final TextEditingController confirmPasswordController;
   final TextEditingController studentIdController;
-  final TextEditingController staffIdController;
   final TextEditingController childNameController;
   final TextEditingController childGradeController;
   final UserRole? selectedRole;
+  final List<UserRole> availableRoles;
   final int currentStep;
   final bool loading;
   final bool termsAccepted;
@@ -46,10 +48,10 @@ class DesktopLayout extends StatelessWidget {
     required this.passwordController,
     required this.confirmPasswordController,
     required this.studentIdController,
-    required this.staffIdController,
     required this.childNameController,
     required this.childGradeController,
     required this.selectedRole,
+    required this.availableRoles,
     required this.currentStep,
     required this.loading,
     required this.termsAccepted,
@@ -67,6 +69,8 @@ class DesktopLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final school = currentSchool();
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Row(
@@ -84,10 +88,10 @@ class DesktopLayout extends StatelessWidget {
                     // Logo and Brand
                     Row(
                       children: [
-                        Image.asset(AppImages.logo, height: 40, width: 40),
+                        SchoolLogo(logo: school.logo, size: 40, radius: 12),
                         const SizedBox(width: 12),
                         Text(
-                          'SchoolHQ',
+                          school.name,
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
@@ -293,7 +297,7 @@ class DesktopLayout extends StatelessWidget {
                   const SizedBox(height: 8),
 
                   Text(
-                    _getStepSubtitle(currentStep),
+                    _getStepSubtitle(currentStep, school.name),
                     style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                   ),
 
@@ -430,10 +434,10 @@ class DesktopLayout extends StatelessWidget {
     }
   }
 
-  String _getStepSubtitle(int step) {
+  String _getStepSubtitle(int step, String schoolName) {
     switch (step) {
       case 0:
-        return 'Choose how you\'ll use SchoolHQ to customize your experience';
+        return 'Choose how you\'ll use $schoolName to customize your experience';
       case 1:
         return 'Tell us about yourself so we can personalize your dashboard';
       case 2:
@@ -467,7 +471,7 @@ class DesktopLayout extends StatelessWidget {
           crossAxisSpacing: 20,
           mainAxisSpacing: 20,
           childAspectRatio: 1,
-          children: UserRole.values.map((role) {
+          children: availableRoles.map((role) {
             return RoleCard(
               role: role,
               isSelected: selectedRole == role,
@@ -601,7 +605,6 @@ class DesktopLayout extends StatelessWidget {
         RoleSpecificFields(
           selectedRole: selectedRole,
           studentIdController: studentIdController,
-          staffIdController: staffIdController,
           childNameController: childNameController,
           childGradeController: childGradeController,
         ),

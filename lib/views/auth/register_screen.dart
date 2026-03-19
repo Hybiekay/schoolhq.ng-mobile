@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:schoolhq_ng/core/school/current_school.dart';
 import 'package:schoolhq_ng/enum/user_role.dart';
 import 'package:schoolhq_ng/providers/auth_provider.dart';
 import 'package:schoolhq_ng/routes/route_names.dart';
@@ -27,7 +28,6 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _studentIdController = TextEditingController();
-  final _staffIdController = TextEditingController();
   final _childNameController = TextEditingController();
   final _childGradeController = TextEditingController();
 
@@ -52,6 +52,11 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     setState(() => _loading = true);
 
     try {
+      final selectedRole = ref.read(registrationProvider).role;
+      if (selectedRole == null) {
+        throw Exception('Please select a role');
+      }
+
       await ref
           .read(authProvider.notifier)
           .register(
@@ -60,12 +65,9 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             email: _emailController.text.trim(),
             phone: _phoneController.text.trim(),
             password: _passwordController.text.trim(),
-            role: ref.watch(registrationProvider).role!,
-            studentId: ref.watch(registrationProvider).role == UserRole.student
+            role: selectedRole,
+            studentId: selectedRole == UserRole.student
                 ? _studentIdController.text.trim()
-                : null,
-            staffId: ref.watch(registrationProvider).role == UserRole.staff
-                ? _staffIdController.text.trim()
                 : null,
             // childName: ref.watch(registrationProvider).role == UserRole.parent
             //     ? _childNameController.text.trim()
@@ -76,9 +78,10 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
           );
 
       if (context.mounted) {
+        final school = currentSchool();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Registration successful! Welcome to SchoolHQ'),
+            content: Text('Registration successful! Welcome to ${school.name}'),
             backgroundColor: Colors.green.shade600,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -88,7 +91,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         );
 
         await Future.delayed(const Duration(milliseconds: 500));
-        context.go(RouteNames.home); // or context.push(RouteNames.home)
+        ref.read(registrationProvider.notifier).clear();
+        context.go(RouteNames.login);
       }
     } catch (e) {
       if (context.mounted) {
@@ -112,8 +116,10 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
 
   void _nextStep() {
     final role = ref.read(registrationProvider).role;
+    final policy = ref.read(registrationPolicyProvider);
 
-    if (widget.step == 0 && role == null) {
+    if (widget.step == 0 &&
+        (role == null || !policy.allowedRoles.contains(role))) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Please select your role')));
@@ -167,7 +173,6 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _studentIdController.dispose();
-    _staffIdController.dispose();
     _childNameController.dispose();
     _childGradeController.dispose();
     super.dispose();
@@ -175,6 +180,28 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final policy = ref.watch(registrationPolicyProvider);
+    final availableRoles = policy.allowedRoles;
+
+    if (!policy.selfRegistrationEnabled || availableRoles.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          context.go(RouteNames.login);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Registration is currently disabled')),
+          );
+        }
+      });
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final selectedRole = ref.watch(registrationProvider).role;
+    if (selectedRole != null && !availableRoles.contains(selectedRole)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(registrationProvider.notifier).clear();
+      });
+    }
+
     if (context.isDesktop) {
       return DesktopLayout(
         formKey: _formKey,
@@ -185,10 +212,10 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         passwordController: _passwordController,
         confirmPasswordController: _confirmPasswordController,
         studentIdController: _studentIdController,
-        staffIdController: _staffIdController,
         childNameController: _childNameController,
         childGradeController: _childGradeController,
-        selectedRole: ref.watch(registrationProvider).role,
+        selectedRole: selectedRole,
+        availableRoles: availableRoles,
         currentStep: widget.step,
         loading: _loading,
         termsAccepted: _termsAccepted,
@@ -220,10 +247,10 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         passwordController: _passwordController,
         confirmPasswordController: _confirmPasswordController,
         studentIdController: _studentIdController,
-        staffIdController: _staffIdController,
         childNameController: _childNameController,
         childGradeController: _childGradeController,
-        selectedRole: ref.watch(registrationProvider).role,
+        selectedRole: selectedRole,
+        availableRoles: availableRoles,
         currentStep: widget.step,
         loading: _loading,
         termsAccepted: _termsAccepted,
@@ -255,10 +282,10 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         passwordController: _passwordController,
         confirmPasswordController: _confirmPasswordController,
         studentIdController: _studentIdController,
-        staffIdController: _staffIdController,
         childNameController: _childNameController,
         childGradeController: _childGradeController,
-        selectedRole: ref.watch(registrationProvider).role,
+        selectedRole: selectedRole,
+        availableRoles: availableRoles,
         currentStep: widget.step,
         onChanged: (v) {
           setState(() {});

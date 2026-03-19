@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:schoolhq_ng/core/school/current_school.dart';
 import 'package:schoolhq_ng/enum/user_role.dart';
 import 'package:schoolhq_ng/views/auth/register/widget/role_card.dart';
 import 'package:schoolhq_ng/views/auth/register/widget/role_specific_fields.dart';
 import 'package:schoolhq_ng/views/auth/register/widget/step_indicator.dart';
 import 'package:schoolhq_ng/views/auth/register/widget/terms_check_box.dart';
 import 'package:schoolhq_ng/widget/app_text_field.dart';
+import 'package:schoolhq_ng/widget/school_logo.dart';
 
 import '../../../../core/constants/constants.dart';
 
@@ -18,10 +20,10 @@ class MobileLayout extends StatelessWidget {
   final TextEditingController passwordController;
   final TextEditingController confirmPasswordController;
   final TextEditingController studentIdController;
-  final TextEditingController staffIdController;
   final TextEditingController childNameController;
   final TextEditingController childGradeController;
   final UserRole? selectedRole;
+  final List<UserRole> availableRoles;
   final int currentStep;
   final bool loading;
   final bool termsAccepted;
@@ -46,10 +48,10 @@ class MobileLayout extends StatelessWidget {
     required this.passwordController,
     required this.confirmPasswordController,
     required this.studentIdController,
-    required this.staffIdController,
     required this.childNameController,
     required this.childGradeController,
     required this.selectedRole,
+    required this.availableRoles,
     required this.currentStep,
     required this.loading,
     required this.termsAccepted,
@@ -67,6 +69,8 @@ class MobileLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final school = currentSchool();
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -83,7 +87,7 @@ class MobileLayout extends StatelessWidget {
                     onPressed: onPreviousStep,
                   ),
                   const Spacer(),
-                  Image.asset(AppImages.logo, height: 40, width: 40),
+                  SchoolLogo(logo: school.logo, size: 40, radius: 12),
                   const SizedBox(width: 16),
                 ],
               ),
@@ -101,7 +105,16 @@ class MobileLayout extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Join SchoolHQ to access your educational dashboard',
+                school.name,
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Join ${school.name} to access your educational dashboard',
                 style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
               ),
 
@@ -202,7 +215,7 @@ class MobileLayout extends StatelessWidget {
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
           childAspectRatio: 0.9,
-          children: UserRole.values.map((role) {
+          children: availableRoles.map((role) {
             return RoleCard(
               role: role,
               isSelected: selectedRole == role,
@@ -338,7 +351,6 @@ class MobileLayout extends StatelessWidget {
         RoleSpecificFields(
           selectedRole: selectedRole,
           studentIdController: studentIdController,
-          staffIdController: staffIdController,
           childNameController: childNameController,
           childGradeController: childGradeController,
         ),
