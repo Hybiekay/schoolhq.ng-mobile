@@ -10,6 +10,8 @@ class UserSchool {
   final String email;
   final String phone;
   final String address;
+  final String currencyCode;
+  final String currencySymbol;
 
   const UserSchool({
     required this.id,
@@ -18,10 +20,18 @@ class UserSchool {
     this.email = '',
     this.phone = '',
     this.address = '',
+    this.currencyCode = 'NGN',
+    this.currencySymbol = '₦',
   });
 
   factory UserSchool.fallback() {
-    return const UserSchool(id: '', name: 'SchoolHQ', logo: AppImages.logo);
+    return const UserSchool(
+      id: '',
+      name: 'SchoolHQ',
+      logo: AppImages.logo,
+      currencyCode: 'NGN',
+      currencySymbol: '₦',
+    );
   }
 
   factory UserSchool.fromMap(Map<String, dynamic> map) {
@@ -32,6 +42,10 @@ class UserSchool {
       email: (map['email'] ?? '').toString(),
       phone: (map['phone'] ?? '').toString(),
       address: (map['address'] ?? '').toString(),
+      currencyCode: (map['currency_code'] ?? map['currencyCode'] ?? 'NGN')
+          .toString(),
+      currencySymbol:
+          (map['currency_symbol'] ?? map['currencySymbol'] ?? '₦').toString(),
     );
   }
 
@@ -40,6 +54,8 @@ class UserSchool {
       id: school.id,
       name: school.name,
       logo: school.logo.isEmpty ? AppImages.logo : school.logo,
+      currencyCode: 'NGN',
+      currencySymbol: '₦',
     );
   }
 

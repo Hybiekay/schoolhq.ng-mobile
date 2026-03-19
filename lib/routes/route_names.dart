@@ -18,9 +18,12 @@ class RouteNames {
   static const registerSecurity = '/register/security';
 
   static const home = '/home';
+  static const classes = '/classes';
   static const courses = '/courses';
   static const tests = '/tests';
   static const exams = '/exams';
+  static const messages = '/messages';
+  static const games = '/games';
   static const teacherDashboard = '/teacher-dashboard';
   static const attendance = '/attendance';
   static const timetable = '/timetable';
@@ -28,7 +31,11 @@ class RouteNames {
   static const profile = '/profile';
   static const examDetail = '/exams/:examId';
   static const examAttempt = '/exams/attempt/:attemptId';
+  static const messageConversation = '/messages/conversations/:conversationId';
 
   static String examDetailPath(String examId) => '/exams/$examId';
-  static String examAttemptPath(String attemptId) => '/exams/attempt/$attemptId';
+  static String examAttemptPath(String attemptId) =>
+      '/exams/attempt/$attemptId';
+  static String messageConversationPath(String conversationId) =>
+      '/messages/conversations/$conversationId';
 }

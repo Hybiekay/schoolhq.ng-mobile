@@ -65,6 +65,15 @@ class MobileRepository {
     }
   }
 
+  Future<Map<String, dynamic>> fetchClasses(String role) {
+    switch (role.toLowerCase()) {
+      case 'student':
+        return getJson('/mobile/student/classes');
+      default:
+        throw Exception('Role $role is not supported for classes.');
+    }
+  }
+
   Future<Map<String, dynamic>> fetchTimetable(String role) {
     switch (role.toLowerCase()) {
       case 'student':
@@ -247,6 +256,31 @@ class MobileRepository {
       default:
         throw Exception('Role $role is not supported in mobile MVP.');
     }
+  }
+
+  Future<Map<String, dynamic>> fetchMessagesInbox() {
+    return getJson('/mobile/messages');
+  }
+
+  Future<Map<String, dynamic>> startMessageConversation(String contactUserId) {
+    return postJson(
+      '/mobile/messages/conversations',
+      body: {'contact_user_id': contactUserId},
+    );
+  }
+
+  Future<Map<String, dynamic>> fetchMessageConversation(String conversationId) {
+    return getJson('/mobile/messages/conversations/$conversationId');
+  }
+
+  Future<Map<String, dynamic>> sendMessage({
+    required String conversationId,
+    required String body,
+  }) {
+    return postJson(
+      '/mobile/messages/conversations/$conversationId/messages',
+      body: {'body': body},
+    );
   }
 
   Future<Map<String, dynamic>> logout() {

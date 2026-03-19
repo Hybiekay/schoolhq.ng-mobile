@@ -34,7 +34,12 @@ class StudentExamQuestionStrip extends StatelessWidget {
             'Question navigator',
             style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
+          Text(
+            'Tap any number to jump quickly between questions.',
+            style: AppTextStyles.small.copyWith(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -47,22 +52,25 @@ class StudentExamQuestionStrip extends StatelessWidget {
               return InkWell(
                 onTap: () => onSelected(index),
                 borderRadius: BorderRadius.circular(12),
-                child: Ink(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
                     color: isCurrent
-                        ? AppColors.primary
+                        ? AppColors.primaryDark
                         : answered
-                        ? const Color(0xFFDCFCE7)
-                        : AppColors.background,
+                        ? AppColors.accent.withOpacity(0.14)
+                        : AppColors.surfaceMuted,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isFlagged
-                          ? const Color(0xFFF59E0B)
+                          ? AppColors.warning
                           : isCurrent
-                          ? AppColors.primary
-                          : Colors.transparent,
+                          ? AppColors.primaryDark
+                          : AppColors.grey.withOpacity(0.4),
+                      width: isCurrent ? 1.4 : 1,
                     ),
                   ),
                   child: Center(
@@ -72,7 +80,7 @@ class StudentExamQuestionStrip extends StatelessWidget {
                         color: isCurrent
                             ? Colors.white
                             : answered
-                            ? const Color(0xFF166534)
+                            ? AppColors.accent
                             : AppColors.textPrimary,
                         fontWeight: FontWeight.w700,
                       ),

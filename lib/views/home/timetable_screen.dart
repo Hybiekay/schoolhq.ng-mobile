@@ -21,7 +21,7 @@ class TimetableScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
-            onPressed: () => ref.invalidate(mobileTimetableProvider),
+            onPressed: () => ref.refresh(mobileTimetableProvider.future),
           ),
         ],
       ),
@@ -166,11 +166,7 @@ class _OverviewCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0F4C81), Color(0xFF1476B8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: AppColors.coolGradient,
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(

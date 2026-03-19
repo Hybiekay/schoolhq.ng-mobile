@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:schoolhq_ng/core/constants/constants.dart';
+import 'package:schoolhq_ng/providers/onboarding_provider.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -34,7 +35,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   ];
 
   void _completeOnboarding() async {
-    // await completeOnboarding(ref);
+    completeOnboarding(ref);
 
     // Navigate after onboarding
     context.go('/select-school');

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:schoolhq_ng/core/feedback/app_snackbar.dart';
 import 'package:schoolhq_ng/core/school/current_school.dart';
 import 'package:schoolhq_ng/enum/user_role.dart';
 import 'package:schoolhq_ng/providers/auth_provider.dart';
@@ -39,12 +40,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   Future<void> _register() async {
     if (!_formKey.currentState!.validate() || !_termsAccepted) {
       if (!_termsAccepted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Please accept the terms and conditions'),
-            backgroundColor: Colors.orange.shade600,
-          ),
-        );
+        AppSnackBar.warning(context, 'Please accept the terms and conditions');
       }
       return;
     }
@@ -79,15 +75,9 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
 
       if (context.mounted) {
         final school = currentSchool();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Registration successful! Welcome to ${school.name}'),
-            backgroundColor: Colors.green.shade600,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
+        AppSnackBar.success(
+          context,
+          'Registration successful! Welcome to ${school.name}',
         );
 
         await Future.delayed(const Duration(milliseconds: 500));
@@ -96,16 +86,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Registration failed: ${e.toString()}'),
-            backgroundColor: Colors.red.shade600,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        AppSnackBar.error(context, 'Registration failed: ${e.toString()}');
       }
     } finally {
       if (mounted) {
@@ -120,9 +101,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
 
     if (widget.step == 0 &&
         (role == null || !policy.allowedRoles.contains(role))) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please select your role')));
+      AppSnackBar.warning(context, 'Please select your role');
       return;
     }
 
@@ -137,10 +116,9 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         if (_termsAccepted) {
           _register();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Please accept the terms and conditions'),
-            ),
+          AppSnackBar.warning(
+            context,
+            'Please accept the terms and conditions',
           );
         }
         break;
@@ -187,9 +165,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted) {
           context.go(RouteNames.login);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Registration is currently disabled')),
-          );
+          AppSnackBar.warning(context, 'Registration is currently disabled');
         }
       });
       return const Scaffold(body: Center(child: CircularProgressIndicator()));

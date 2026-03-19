@@ -87,8 +87,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       try {
         final appBox = Hive.box('app');
         onboardingDone = appBox.get('onboardingDone', defaultValue: false);
-        schoolSelected = appBox.get(HiveKey.selectedSchool, defaultValue: null);
-        isLoggedIn = appBox.get(HiveKey.token, defaultValue: null) != null;
+        schoolSelected =
+            appBox.get(HiveKey.selectedSchool) ??
+            appBox.get(HiveKey.userSchool);
+        final token = appBox.get(HiveKey.token);
+        isLoggedIn = token is String && token.isNotEmpty;
       } catch (e) {
         if (kDebugMode) {
           print('Hive error: $e');
@@ -98,13 +101,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         return;
       }
 
+      final savedSchool = SchoolModel.fromDynamic(schoolSelected);
+      final hasSelectedSchool =
+          savedSchool != null && savedSchool.id.isNotEmpty;
+
       if (!isWeb) {
-        final selectedSchool = SchoolModel.fromDynamic(schoolSelected);
-        if (selectedSchool != null && selectedSchool.id.isNotEmpty) {
+        if (hasSelectedSchool) {
           try {
             final activeSchool = await ref
                 .read(schoolDirectoryRepositoryProvider)
-                .fetchActiveSchoolById(selectedSchool.id);
+                .fetchActiveSchoolById(savedSchool.id);
 
             if (activeSchool == null) {
               schoolInactive = true;
@@ -121,17 +127,27 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         }
       }
 
-      if (!schoolInactive) {
+      if (!schoolInactive && hasSelectedSchool) {
         await ref.read(authProvider.notifier).syncBranding();
         if (mounted) {
           setState(() {});
         }
       }
 
+      if (!isWeb && !hasSelectedSchool && isLoggedIn) {
+        await ref.read(authProvider.notifier).logout();
+        isLoggedIn = false;
+      } else if (isLoggedIn &&
+          (isWeb || hasSelectedSchool) &&
+          !schoolInactive) {
+        isLoggedIn = await ref.read(authProvider.notifier).restoreSession();
+      }
+
       _handleNavigation(
         isWeb: isWeb,
         onboardingDone: onboardingDone,
-        schoolSelected: schoolSelected,
+        hasSelectedSchool:
+            SchoolModel.fromDynamic(schoolSelected)?.id.isNotEmpty ?? false,
         isLoggedIn: isLoggedIn,
         schoolInactive: schoolInactive,
         hasError: false,
@@ -140,8 +156,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       if (kDebugMode) {
         print('Load data error: $e');
       }
-      // Fallback navigation on error
-      context.go('/login');
+      final appBox = Hive.box(HiveKey.boxApp);
+      final savedSchool = SchoolModel.fromDynamic(
+        appBox.get(HiveKey.selectedSchool) ?? appBox.get(HiveKey.userSchool),
+      );
+      final hasSavedSchool = savedSchool != null && savedSchool.id.isNotEmpty;
+
+      context.go(hasSavedSchool ? RouteNames.login : RouteNames.selectSchool);
     }
   }
 
@@ -149,7 +170,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     required bool isWeb,
     bool hasError = false,
     bool onboardingDone = false,
-    dynamic schoolSelected,
+    bool hasSelectedSchool = false,
     bool isLoggedIn = false,
     bool schoolInactive = false,
   }) {
@@ -164,12 +185,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       return;
     }
 
-    if (!isWeb && !onboardingDone) {
-      context.go(RouteNames.onboarding);
-      return;
-    }
-
-    if (!isWeb && schoolSelected == null) {
+    if (!isWeb && !hasSelectedSchool) {
+      if (!onboardingDone) {
+        context.go(RouteNames.onboarding);
+        return;
+      }
       context.go(RouteNames.selectSchool);
       return;
     }

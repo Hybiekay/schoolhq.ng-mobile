@@ -55,8 +55,20 @@ class SchoolController extends StateNotifier<SchoolModel?> {
   }
 
   void _loadSchool() {
-    final selected = Hive.box(HiveKey.boxApp).get(HiveKey.selectedSchool);
-    state = SchoolModel.fromDynamic(selected);
+    final box = Hive.box(HiveKey.boxApp);
+    final selected = box.get(HiveKey.selectedSchool);
+    final fallback = selected ?? box.get(HiveKey.userSchool);
+    final school = SchoolModel.fromDynamic(fallback);
+
+    if (school != null && school.id.isNotEmpty) {
+      if (selected == null) {
+        box.put(HiveKey.selectedSchool, school.toJson());
+      }
+      state = school;
+      return;
+    }
+
+    state = null;
   }
 
   void selectSchool(SchoolModel school) {

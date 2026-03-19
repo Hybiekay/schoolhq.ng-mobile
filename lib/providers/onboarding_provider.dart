@@ -11,3 +11,8 @@ void completeOnboarding(WidgetRef ref) {
   Hive.box('app').put('onboardingDone', true);
   ref.read(onboardingProvider.notifier).state = true;
 }
+
+void resetOnboarding(WidgetRef ref) {
+  Hive.box('app').put('onboardingDone', false);
+  ref.read(onboardingProvider.notifier).state = false;
+}

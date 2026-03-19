@@ -8,6 +8,7 @@ import 'package:schoolhq_ng/core/network/school_urls.dart';
 import 'package:schoolhq_ng/enum/user_role.dart';
 
 import '../repositories/auth_repository.dart';
+import 'chat_realtime_provider.dart';
 import 'school_provider.dart';
 
 /// Create global FlintClient instance
@@ -43,8 +44,37 @@ class AuthController extends StateNotifier<bool> {
   /// Load session from Hive on app start
   void _loadToken() {
     final token = Hive.box(HiveKey.boxApp).get(HiveKey.token);
-    if (token != null) {
+    if (token is String && token.isNotEmpty) {
       state = true;
+    }
+  }
+
+  Future<bool> restoreSession() async {
+    final box = Hive.box(HiveKey.boxApp);
+    final token = box.get(HiveKey.token);
+
+    if (token is! String || token.isEmpty) {
+      await logout();
+      return false;
+    }
+
+    try {
+      final data = await ref.read(authRepositoryProvider).fetchCurrentUser();
+      final user = _extractUser(data);
+      final role = _extractRole(data);
+
+      if (user != null) {
+        box.put(HiveKey.userProfile, user);
+      }
+      if (role != null && role.isNotEmpty) {
+        box.put(HiveKey.userRole, role);
+      }
+
+      state = true;
+      return true;
+    } catch (_) {
+      await logout();
+      return false;
     }
   }
 
@@ -88,6 +118,7 @@ class AuthController extends StateNotifier<bool> {
   /// to the same school login screen. Pass `clearSchool: true` only when
   /// the user explicitly wants to remove the saved school.
   Future<void> logout({bool clearSchool = false}) async {
+    await ref.read(chatRealtimeServiceProvider).disconnect();
     final box = Hive.box(HiveKey.boxApp);
     box.delete(HiveKey.token);
     box.delete(HiveKey.userRole);
@@ -139,6 +170,17 @@ class AuthController extends StateNotifier<bool> {
     return null;
   }
 
+  Map<String, dynamic>? _extractUser(Map<String, dynamic> data) {
+    final user = data['user'];
+    if (user is Map<String, dynamic>) {
+      return Map<String, dynamic>.from(user);
+    }
+    if (user is Map) {
+      return Map<String, dynamic>.from(user);
+    }
+    return null;
+  }
+
   void _storeSchool(Box box, dynamic school) {
     final selectedSchool = box.get(HiveKey.selectedSchool);
     final selectedMap = selectedSchool is Map<String, dynamic>
@@ -170,6 +212,9 @@ class AuthController extends StateNotifier<bool> {
       merged['app_url'] = selectedAppUrl;
     }
 
+    if (selectedMap.isEmpty) {
+      box.put(HiveKey.selectedSchool, merged);
+    }
     box.put(HiveKey.userSchool, merged);
   }
 }

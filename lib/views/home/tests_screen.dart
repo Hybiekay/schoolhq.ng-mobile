@@ -1,10 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:schoolhq_ng/core/constants/constants.dart';
+import 'package:schoolhq_ng/core/formatters/school_currency_formatter.dart';
 import 'package:schoolhq_ng/providers/mobile_provider.dart';
+import 'package:schoolhq_ng/views/home/shared/widgets/mobile_top_action_bar.dart';
 
 class TestsScreen extends ConsumerWidget {
   const TestsScreen({super.key});
+
+  Future<void> _refreshFeesData(WidgetRef ref, String role) async {
+    if (role == 'parent') {
+      ref.invalidate(parentChildrenProvider);
+      await ref.read(parentChildrenProvider.future);
+    }
+
+    ref.invalidate(mobileSessionsMetaProvider);
+    await ref.read(mobileSessionsMetaProvider.future);
+
+    ref.invalidate(mobileFeesProvider);
+    await ref.read(mobileFeesProvider.future);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -20,90 +35,86 @@ class TestsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Fees'),
-        backgroundColor: AppColors.white,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0.5,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: () {
-              ref.invalidate(mobileFeesProvider);
-              ref.invalidate(parentChildrenProvider);
-            },
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(mobileFeesProvider);
-          if (role == 'parent') ref.invalidate(parentChildrenProvider);
-        },
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(20),
-          children: [
-            if (role == 'parent') ...[
-              childrenAsync.when(
-                loading: () => const LinearProgressIndicator(minHeight: 2),
-                error: (e, _) =>
-                    _ErrorCard(message: 'Failed to load children: $e'),
-                data: (children) => _ParentChildSelector(
-                  children: children,
-                  selectedChildId: selectedChildId,
-                  onSelected: (id) {
-                    ref.read(parentSelectedChildIdProvider.notifier).set(id);
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () => _refreshFeesData(ref, role),
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(20),
+            children: [
+              MobileTopActionBar(
+                title: 'Fees',
+                subtitle:
+                    'Follow assigned fees, payments, and balances with school-aware currency formatting.',
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0F766E), Color(0xFF14B8A6)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                onRefresh: () => _refreshFeesData(ref, role),
+              ),
+              const SizedBox(height: 16),
+              if (role == 'parent') ...[
+                childrenAsync.when(
+                  loading: () => const LinearProgressIndicator(minHeight: 2),
+                  error: (e, _) =>
+                      _ErrorCard(message: 'Failed to load children: $e'),
+                  data: (children) => _ParentChildSelector(
+                    children: children,
+                    selectedChildId: selectedChildId,
+                    onSelected: (id) {
+                      ref.read(parentSelectedChildIdProvider.notifier).set(id);
+                      ref.invalidate(mobileFeesProvider);
+                      ref.invalidate(mobileTermResultsProvider);
+                      ref.invalidate(mobileSessionResultsProvider);
+                    },
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              metaAsync.when(
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+                data: (sessions) => _FilterCard(
+                  sessions: sessions,
+                  selectedSessionId: selectedSessionId,
+                  selectedTermId: selectedTermId,
+                  onSessionChanged: (sessionId) {
+                    ref.read(resultsSelectedSessionIdProvider.notifier).state =
+                        sessionId;
+                    final selectedSession = sessions.firstWhere(
+                      (s) => s['id']?.toString() == sessionId,
+                      orElse: () => sessions.isNotEmpty
+                          ? sessions.first
+                          : <String, dynamic>{},
+                    );
+                    final terms = _termsForSession(selectedSession);
+                    if (terms.isNotEmpty) {
+                      final currentTerm = terms.firstWhere(
+                        (t) => t['is_current'] == true,
+                        orElse: () => terms.first,
+                      );
+                      ref.read(resultsSelectedTermIdProvider.notifier).state =
+                          currentTerm['id']?.toString();
+                    }
                     ref.invalidate(mobileFeesProvider);
-                    ref.invalidate(mobileTermResultsProvider);
-                    ref.invalidate(mobileSessionResultsProvider);
+                  },
+                  onTermChanged: (termId) {
+                    ref.read(resultsSelectedTermIdProvider.notifier).state =
+                        termId;
+                    ref.invalidate(mobileFeesProvider);
                   },
                 ),
               ),
-              const SizedBox(height: 12),
-            ],
-            metaAsync.when(
-              loading: () => const SizedBox.shrink(),
-              error: (_, __) => const SizedBox.shrink(),
-              data: (sessions) => _FilterCard(
-                sessions: sessions,
-                selectedSessionId: selectedSessionId,
-                selectedTermId: selectedTermId,
-                onSessionChanged: (sessionId) {
-                  ref.read(resultsSelectedSessionIdProvider.notifier).state =
-                      sessionId;
-                  final selectedSession = sessions.firstWhere(
-                    (s) => s['id']?.toString() == sessionId,
-                    orElse: () => sessions.isNotEmpty
-                        ? sessions.first
-                        : <String, dynamic>{},
-                  );
-                  final terms = _termsForSession(selectedSession);
-                  if (terms.isNotEmpty) {
-                    final currentTerm = terms.firstWhere(
-                      (t) => t['is_current'] == true,
-                      orElse: () => terms.first,
-                    );
-                    ref.read(resultsSelectedTermIdProvider.notifier).state =
-                        currentTerm['id']?.toString();
-                  }
-                  ref.invalidate(mobileFeesProvider);
-                },
-                onTermChanged: (termId) {
-                  ref.read(resultsSelectedTermIdProvider.notifier).state =
-                      termId;
-                  ref.invalidate(mobileFeesProvider);
-                },
+              const SizedBox(height: 14),
+              feesAsync.when(
+                loading: () =>
+                    const _LoadingCard(label: 'Loading fee records...'),
+                error: (error, _) => _ErrorCard(message: error.toString()),
+                data: (data) => _FeesContent(data: data, role: role),
               ),
-            ),
-            const SizedBox(height: 14),
-            feesAsync.when(
-              loading: () =>
-                  const _LoadingCard(label: 'Loading fee records...'),
-              error: (error, _) => _ErrorCard(message: error.toString()),
-              data: (data) => _FeesContent(data: data, role: role),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -554,5 +565,4 @@ double _num(dynamic value) {
   return double.tryParse('${value ?? 0}') ?? 0;
 }
 
-String _money(double amount) =>
-    '\$${amount.toStringAsFixed(amount >= 1000 ? 0 : 2)}';
+String _money(double amount) => formatSchoolMoney(amount);

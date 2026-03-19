@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:schoolhq_ng/core/constants/constants.dart';
+import 'package:schoolhq_ng/views/home/shared/widgets/mobile_top_action_bar.dart';
 
 class TeacherDashboardScreen extends StatelessWidget {
   const TeacherDashboardScreen({super.key});
@@ -8,108 +9,111 @@ class TeacherDashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Teacher Dashboard'),
-        backgroundColor: AppColors.white,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0.5,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0EA5E9), Color(0xFF2563EB)],
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            const MobileTopActionBar(
+              title: 'Teacher Dashboard',
+              subtitle:
+                  'Keep class updates, messaging, and teaching actions close at hand.',
+              gradient: LinearGradient(
+                colors: [Color(0xFF6366F1), Color(0xFFEC4899)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(20),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Good morning, Teacher',
-                  style: AppTextStyles.subtitle.copyWith(
-                    color: Colors.white.withOpacity(0.9),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                gradient: AppColors.accentGradient,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Good morning, Teacher',
+                    style: AppTextStyles.subtitle.copyWith(
+                      color: Colors.white.withOpacity(0.9),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'You have 4 classes and 18 submissions today',
-                  style: AppTextStyles.body.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
+                  const SizedBox(height: 8),
+                  Text(
+                    'You have 4 classes and 18 submissions today',
+                    style: AppTextStyles.body.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 18),
-          Text('Class Overview', style: AppTextStyles.headingMedium),
-          const SizedBox(height: 12),
-          const _MetricCard(
-            title: 'Active Classes',
-            value: '6',
-            icon: Icons.groups_2_outlined,
-          ),
-          const SizedBox(height: 10),
-          const _MetricCard(
-            title: 'Assignments to Grade',
-            value: '18',
-            icon: Icons.assignment_turned_in_outlined,
-          ),
-          const SizedBox(height: 10),
-          const _MetricCard(
-            title: 'Average Attendance',
-            value: '89%',
-            icon: Icons.event_available_outlined,
-          ),
-          const SizedBox(height: 18),
-          Text('Next Class', style: AppTextStyles.headingMedium),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(16),
+            const SizedBox(height: 18),
+            Text('Class Overview', style: AppTextStyles.headingMedium),
+            const SizedBox(height: 12),
+            const _MetricCard(
+              title: 'Active Classes',
+              value: '6',
+              icon: Icons.groups_2_outlined,
             ),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(12),
+            const SizedBox(height: 10),
+            const _MetricCard(
+              title: 'Assignments to Grade',
+              value: '18',
+              icon: Icons.assignment_turned_in_outlined,
+            ),
+            const SizedBox(height: 10),
+            const _MetricCard(
+              title: 'Average Attendance',
+              value: '89%',
+              icon: Icons.event_available_outlined,
+            ),
+            const SizedBox(height: 18),
+            Text('Next Class', style: AppTextStyles.headingMedium),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.class_outlined,
+                      color: AppColors.primary,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.class_outlined,
-                    color: AppColors.primary,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Mathematics - Grade 8',
-                        style: AppTextStyles.body.copyWith(
-                          fontWeight: FontWeight.w600,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Mathematics - Grade 8',
+                          style: AppTextStyles.body.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text('10:30 AM - Room 12', style: AppTextStyles.small),
-                    ],
+                        const SizedBox(height: 4),
+                        Text('10:30 AM - Room 12', style: AppTextStyles.small),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -174,10 +174,10 @@ class HomeShell extends StatelessWidget {
             selectedIcon: Icons.home_rounded,
           ),
           _NavItem(
-            label: 'Results',
+            label: 'Classes',
             route: RouteNames.courses,
-            icon: Icons.assessment_outlined,
-            selectedIcon: Icons.assessment_rounded,
+            icon: Icons.menu_book_outlined,
+            selectedIcon: Icons.menu_book_rounded,
           ),
           _NavItem(
             label: 'Exams',

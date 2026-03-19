@@ -38,10 +38,7 @@ class StudentExamStatusState extends StatelessWidget {
             ),
             if (onRetry != null) ...[
               const SizedBox(height: 14),
-              ElevatedButton(
-                onPressed: onRetry,
-                child: const Text('Retry'),
-              ),
+              ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
             ],
           ],
         ),

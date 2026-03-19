@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:schoolhq_ng/core/constants/constants.dart';
+import 'package:schoolhq_ng/core/feedback/app_snackbar.dart';
 import 'package:schoolhq_ng/core/school/current_school.dart';
 import 'package:schoolhq_ng/providers/auth_provider.dart';
 import 'package:schoolhq_ng/routes/route_names.dart';
@@ -39,16 +40,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Login failed: ${_friendlyError(e)}'),
-            backgroundColor: Colors.red.shade600,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        AppSnackBar.error(context, 'Login failed: ${_friendlyError(e)}');
       }
     } finally {
       if (mounted) {

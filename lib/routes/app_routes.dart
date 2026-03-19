@@ -9,8 +9,12 @@ import 'package:schoolhq_ng/views/home/attendance_screen.dart';
 import 'package:schoolhq_ng/views/home/calendar_screen.dart';
 import 'package:schoolhq_ng/views/home/courses_screen.dart';
 import 'package:schoolhq_ng/views/home/exams_screen.dart';
+import 'package:schoolhq_ng/views/home/games_screen.dart';
 import 'package:schoolhq_ng/views/home/home_screen.dart';
+import 'package:schoolhq_ng/views/home/message_conversation_screen.dart';
+import 'package:schoolhq_ng/views/home/messages_screen.dart';
 import 'package:schoolhq_ng/views/home/profile_screen.dart';
+import 'package:schoolhq_ng/views/home/student_classes_screen.dart';
 import 'package:schoolhq_ng/views/home/student_exam_attempt_screen.dart';
 import 'package:schoolhq_ng/views/home/student_exam_detail_screen.dart';
 import 'package:schoolhq_ng/views/home/teacher_dashboard_screen.dart';
@@ -91,6 +95,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           attemptId: state.pathParameters['attemptId'] ?? '',
         ),
       ),
+      GoRoute(
+        path: RouteNames.messageConversation,
+        builder: (_, state) => MessageConversationScreen(
+          conversationId: state.pathParameters['conversationId'] ?? '',
+        ),
+      ),
 
       ShellRoute(
         builder: (_, __, child) => HomeShell(child: child),
@@ -120,12 +130,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (_, __) => const CoursesScreen(),
           ),
           GoRoute(
+            path: RouteNames.classes,
+            builder: (_, __) => const StudentClassesScreen(),
+          ),
+          GoRoute(
             path: RouteNames.tests,
             builder: (_, __) => const TestsScreen(),
           ),
           GoRoute(
             path: RouteNames.exams,
             builder: (_, __) => const ExamsScreen(),
+          ),
+          GoRoute(
+            path: RouteNames.messages,
+            builder: (_, __) => const MessagesScreen(),
+          ),
+          GoRoute(
+            path: RouteNames.games,
+            builder: (_, __) => const GamesScreen(),
           ),
           GoRoute(
             path: RouteNames.profile,

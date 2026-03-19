@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:schoolhq_ng/core/constants/constants.dart';
+import 'package:schoolhq_ng/core/feedback/app_snackbar.dart';
 import 'package:schoolhq_ng/providers/auth_provider.dart';
 import 'package:schoolhq_ng/providers/school_provider.dart';
 import 'package:schoolhq_ng/routes/route_names.dart';
@@ -147,10 +148,9 @@ class _SelectSchoolScreenState extends ConsumerState<SelectSchoolScreen> {
                   // handle scanned school ID like before
                 }
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("QR scanning is only available on mobile."),
-                  ),
+                AppSnackBar.info(
+                  context,
+                  'QR scanning is only available on mobile.',
                 );
               }
             },

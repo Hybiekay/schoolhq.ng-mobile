@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:schoolhq_ng/core/constants/constants.dart';
+import 'package:schoolhq_ng/core/feedback/app_snackbar.dart';
 import 'package:schoolhq_ng/providers/mobile_provider.dart';
 import 'package:schoolhq_ng/routes/route_names.dart';
 import 'package:schoolhq_ng/views/home/exam/helpers/student_exam_helpers.dart';
@@ -21,6 +22,20 @@ class StudentExamDetailScreen extends ConsumerStatefulWidget {
 class _StudentExamDetailScreenState
     extends ConsumerState<StudentExamDetailScreen> {
   bool _starting = false;
+
+  Future<void> _refreshDetail() async {
+    if (widget.examId.isEmpty) {
+      return;
+    }
+
+    ref.invalidate(mobileExamDetailProvider(widget.examId));
+    ref.invalidate(mobileExamsProvider);
+
+    await Future.wait<dynamic>([
+      ref.read(mobileExamDetailProvider(widget.examId).future),
+      ref.read(mobileExamsProvider.future),
+    ]);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,9 +57,7 @@ class _StudentExamDetailScreenState
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
-            onPressed: widget.examId.isEmpty
-                ? null
-                : () => ref.invalidate(mobileExamDetailProvider(widget.examId)),
+            onPressed: widget.examId.isEmpty ? null : _refreshDetail,
           ),
         ],
       ),
@@ -60,13 +73,12 @@ class _StudentExamDetailScreenState
                 icon: Icons.error_outline_rounded,
                 title: 'Unable to load exam',
                 message: error.toString(),
-                onRetry: () =>
-                    ref.invalidate(mobileExamDetailProvider(widget.examId)),
+                onRetry: _refreshDetail,
               ),
               data: (payload) => StudentExamDetailBody(
-                examId: widget.examId,
                 payload: payload,
                 starting: _starting,
+                onRefresh: _refreshDetail,
                 onStart: _startOrResumeExam,
               ),
             ),
@@ -98,14 +110,9 @@ class _StudentExamDetailScreenState
         final startedStatus = startedAttempt['status']?.toString();
 
         if (startedStatus == 'submitted') {
-          ref.invalidate(mobileExamDetailProvider(widget.examId));
-          ref.invalidate(mobileExamsProvider);
+          await _refreshDetail();
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('This CBT has already been submitted.'),
-              ),
-            );
+            AppSnackBar.info(context, 'This CBT has already been submitted.');
           }
           return;
         }
@@ -119,18 +126,16 @@ class _StudentExamDetailScreenState
         RouteNames.examAttemptPath(targetAttemptId),
       );
 
-      ref.invalidate(mobileExamDetailProvider(widget.examId));
-      ref.invalidate(mobileExamsProvider);
+      await _refreshDetail();
 
       if (result == true && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('CBT submitted successfully.')),
-        );
+        AppSnackBar.success(context, 'CBT submitted successfully.');
       }
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+      AppSnackBar.error(
+        context,
+        error.toString().replaceFirst('Exception: ', ''),
       );
     } finally {
       if (mounted) {

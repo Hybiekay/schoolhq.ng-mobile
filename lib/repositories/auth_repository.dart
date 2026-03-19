@@ -1,4 +1,6 @@
 import 'package:flint_client/flint_client.dart';
+import 'package:hive/hive.dart';
+import 'package:schoolhq_ng/core/hive/hive_key.dart';
 import 'package:schoolhq_ng/enum/user_role.dart';
 
 class AuthRepository {
@@ -26,6 +28,19 @@ class AuthRepository {
 
     if (!response.success || response.data == null) {
       throw Exception(response.error?.message ?? "Branding fetch failed");
+    }
+
+    return Map<String, dynamic>.from(response.data!);
+  }
+
+  Future<Map<String, dynamic>> fetchCurrentUser() async {
+    final response = await client.get<Map<String, dynamic>>(
+      '/mobile/auth/me',
+      headers: _authHeaders(),
+    );
+
+    if (!response.success || response.data == null) {
+      throw Exception(response.error?.message ?? "Session validation failed");
     }
 
     return Map<String, dynamic>.from(response.data!);
@@ -64,5 +79,14 @@ class AuthRepository {
     }
 
     return response.data!;
+  }
+
+  Map<String, String> _authHeaders() {
+    final token = Hive.box(HiveKey.boxApp).get(HiveKey.token);
+    if (token is! String || token.isEmpty) {
+      throw Exception('No authentication token found.');
+    }
+
+    return {'Authorization': 'Bearer $token', 'Accept': 'application/json'};
   }
 }

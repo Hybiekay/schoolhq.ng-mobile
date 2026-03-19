@@ -1,28 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:schoolhq_ng/providers/mobile_provider.dart';
 import 'package:schoolhq_ng/views/home/exam/helpers/student_exam_helpers.dart';
 import 'package:schoolhq_ng/views/home/exam/widgets/student_exam_action_card.dart';
 import 'package:schoolhq_ng/views/home/exam/widgets/student_exam_instructions_card.dart';
 import 'package:schoolhq_ng/views/home/exam/widgets/student_exam_overview_card.dart';
 import 'package:schoolhq_ng/views/home/exam/widgets/student_exam_submitted_card.dart';
 
-class StudentExamDetailBody extends ConsumerWidget {
-  final String examId;
+class StudentExamDetailBody extends StatelessWidget {
   final Map<String, dynamic> payload;
   final bool starting;
-  final Future<void> Function(Map<String, dynamic>, Map<String, dynamic>) onStart;
+  final Future<void> Function() onRefresh;
+  final Future<void> Function(Map<String, dynamic>, Map<String, dynamic>)
+  onStart;
 
   const StudentExamDetailBody({
     super.key,
-    required this.examId,
     required this.payload,
     required this.starting,
+    required this.onRefresh,
     required this.onStart,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final exam = examAsMap(payload['exam']);
     final attempt = examAsMap(exam['attempt']);
     final isSubmitted =
@@ -30,7 +29,7 @@ class StudentExamDetailBody extends ConsumerWidget {
         (attempt['submitted_at']?.toString().isNotEmpty ?? false);
 
     return RefreshIndicator(
-      onRefresh: () async => ref.refresh(mobileExamDetailProvider(examId).future),
+      onRefresh: onRefresh,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(20),

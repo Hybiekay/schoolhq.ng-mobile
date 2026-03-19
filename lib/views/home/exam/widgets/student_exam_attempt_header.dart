@@ -25,11 +25,7 @@ class StudentExamAttemptHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0F4C81), Color(0xFF1E88E5)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: AppColors.accentGradient,
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
@@ -55,7 +51,9 @@ class StudentExamAttemptHeader extends StatelessWidget {
             runSpacing: 8,
             children: [
               _buildPill('Question ${currentIndex + 1}/$totalQuestions'),
-              _buildPill('${examIntValue(exam['duration_minutes'])} min duration'),
+              _buildPill(
+                '${examIntValue(exam['duration_minutes'])} min duration',
+              ),
               if (remainingSeconds != null)
                 _buildPill(
                   'Time left ${examFormatTime(remainingSeconds!)}',
