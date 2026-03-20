@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:schoolhq_ng/core/constants/constants.dart';
-import 'package:schoolhq_ng/core/school/current_school.dart';
+import 'package:schoolhq_ng/providers/mobile_provider.dart';
 import 'package:schoolhq_ng/views/home/shared/helpers/mobile_top_bar_actions.dart';
-import 'package:schoolhq_ng/widget/school_logo.dart';
+import 'package:schoolhq_ng/views/home/shared/widgets/mobile_top_action_button.dart';
 
-class MobileTopActionBar extends StatelessWidget {
+class MobileTopActionBar extends ConsumerWidget {
   final String title;
   final String subtitle;
   final LinearGradient gradient;
@@ -19,8 +20,12 @@ class MobileTopActionBar extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final school = currentSchool();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notificationsSummary = ref.watch(mobileNotificationsSummaryProvider);
+    final unreadCount = notificationsSummary.maybeWhen(
+      data: (summary) => int.tryParse('${summary['unread_count'] ?? 0}') ?? 0,
+      orElse: () => 0,
+    );
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -42,50 +47,14 @@ class MobileTopActionBar extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        SchoolLogo(
-                          logo: school.logo,
-                          size: 18,
-                          radius: 6,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            school.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.small.copyWith(
-                              color: Colors.white.withOpacity(0.78),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    title,
+                    style: AppTextStyles.headingMedium.copyWith(
+                      color: Colors.white,
                     ),
-                    const SizedBox(height: 10),
-                    Text(
-                      title,
-                      style: AppTextStyles.headingMedium.copyWith(
-                        color: Colors.white,
-                      ),
-                    ),
-                    if (subtitle.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        subtitle,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.small.copyWith(
-                          color: Colors.white.withOpacity(0.82),
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
-                  ],
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -93,27 +62,28 @@ class MobileTopActionBar extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _buildActionButton(
+                  MobileTopActionButton(
                     icon: Icons.manage_search_rounded,
                     onTap: () {
                       openMobileQuickSearch(context);
                     },
                   ),
-                  _buildActionButton(
+                  MobileTopActionButton(
                     icon: Icons.notifications_active_rounded,
+                    badgeCount: unreadCount,
                     onTap: () {
                       showMobileNotificationsPreview(context);
                     },
                   ),
                   if (mobileMessagingEnabled())
-                    _buildActionButton(
+                    MobileTopActionButton(
                       icon: Icons.forum_rounded,
                       onTap: () {
                         showMobileChatPreview(context);
                       },
                     ),
                   if (onRefresh != null)
-                    _buildActionButton(
+                    MobileTopActionButton(
                       icon: Icons.sync_rounded,
                       onTap: () {
                         onRefresh!();
@@ -124,25 +94,6 @@ class MobileTopActionBar extends StatelessWidget {
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.white.withOpacity(0.14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: SizedBox(
-          width: 46,
-          height: 46,
-          child: Icon(icon, color: Colors.white),
-        ),
       ),
     );
   }

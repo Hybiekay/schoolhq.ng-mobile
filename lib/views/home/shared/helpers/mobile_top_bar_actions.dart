@@ -13,10 +13,7 @@ Future<void> openMobileQuickSearch(BuildContext context) async {
 }
 
 void showMobileNotificationsPreview(BuildContext context) {
-  AppSnackBar.info(
-    context,
-    'Notifications will show here when school alerts are connected.',
-  );
+  GoRouter.of(context).go(RouteNames.notifications);
 }
 
 void showMobileChatPreview(BuildContext context) {
@@ -167,6 +164,14 @@ List<_QuickAccessDestination> _destinationsForRole(String role) {
   ];
 
   if (role == 'student' || role == 'teacher') {
+    destinations.add(
+      const _QuickAccessDestination(
+        title: 'Notifications',
+        subtitle: 'Open your alerts and updates',
+        route: RouteNames.notifications,
+        icon: Icons.notifications_active_rounded,
+      ),
+    );
     destinations.add(
       const _QuickAccessDestination(
         title: 'Messages',

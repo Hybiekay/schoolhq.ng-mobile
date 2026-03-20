@@ -13,6 +13,7 @@ import 'package:schoolhq_ng/views/home/games_screen.dart';
 import 'package:schoolhq_ng/views/home/home_screen.dart';
 import 'package:schoolhq_ng/views/home/message_conversation_screen.dart';
 import 'package:schoolhq_ng/views/home/messages_screen.dart';
+import 'package:schoolhq_ng/views/home/notifications_screen.dart';
 import 'package:schoolhq_ng/views/home/profile_screen.dart';
 import 'package:schoolhq_ng/views/home/student_classes_screen.dart';
 import 'package:schoolhq_ng/views/home/student_exam_attempt_screen.dart';
@@ -140,6 +141,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: RouteNames.exams,
             builder: (_, __) => const ExamsScreen(),
+          ),
+          GoRoute(
+            path: RouteNames.notifications,
+            builder: (_, __) => const NotificationsScreen(),
           ),
           GoRoute(
             path: RouteNames.messages,

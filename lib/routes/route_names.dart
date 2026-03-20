@@ -22,6 +22,7 @@ class RouteNames {
   static const courses = '/courses';
   static const tests = '/tests';
   static const exams = '/exams';
+  static const notifications = '/notifications';
   static const messages = '/messages';
   static const games = '/games';
   static const teacherDashboard = '/teacher-dashboard';

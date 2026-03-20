@@ -15,7 +15,14 @@ import 'school_provider.dart';
 final flintClientProvider = Provider<FlintClient>((ref) {
   final selectedSchool = ref.watch(schoolProvider);
   final baseUrl = resolveSchoolApiBaseUrl(selectedSchool);
-  return FlintClient(baseUrl: baseUrl, timeout: const Duration(seconds: 15));
+  return FlintClient(
+    baseUrl: baseUrl,
+    timeout: const Duration(seconds: 15),
+    defaultCacheConfig: CacheConfig(
+      maxAge: Duration(microseconds: 500),
+      forceRefresh: true, // Ignore cache and fetch fresh data
+    ),
+  );
 });
 
 /// Repository Provider

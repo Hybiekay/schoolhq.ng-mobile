@@ -44,6 +44,7 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   url_strategy: ^0.3.0
+  pusher_reverb_flutter: ^0.0.4
 
 dev_dependencies:
   flutter_test:

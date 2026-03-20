@@ -13,8 +13,8 @@ class MobileRepository {
   }) async {
     final response = await client.get<Map<String, dynamic>>(
       path,
-      queryParameters: query,
-      headers: _authHeaders(),
+      queryParameters: _freshQuery(query),
+      headers: _requestHeaders(noCache: true),
     );
 
     if (!response.success || response.data == null) {
@@ -33,7 +33,7 @@ class MobileRepository {
       path,
       body: body,
       queryParameters: query,
-      headers: _authHeaders(),
+      headers: _requestHeaders(),
     );
 
     if (!response.success || response.data == null) {
@@ -262,6 +262,18 @@ class MobileRepository {
     return getJson('/mobile/messages');
   }
 
+  Future<Map<String, dynamic>> fetchNotifications({int limit = 40}) {
+    return getJson('/mobile/notifications', query: {'limit': '$limit'});
+  }
+
+  Future<Map<String, dynamic>> markNotificationRead(String notificationId) {
+    return postJson('/mobile/notifications/$notificationId/read');
+  }
+
+  Future<Map<String, dynamic>> markAllNotificationsRead() {
+    return postJson('/mobile/notifications/read-all');
+  }
+
   Future<Map<String, dynamic>> startMessageConversation(String contactUserId) {
     return postJson(
       '/mobile/messages/conversations',
@@ -287,12 +299,24 @@ class MobileRepository {
     return postJson('/mobile/auth/logout');
   }
 
-  Map<String, String> _authHeaders() {
+  Map<String, String> _requestHeaders({bool noCache = false}) {
     final token = Hive.box(HiveKey.boxApp).get(HiveKey.token);
     if (token is! String || token.isEmpty) {
       throw Exception('No authentication token found.');
     }
 
-    return {'Authorization': 'Bearer $token', 'Accept': 'application/json'};
+    return {
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+      if (noCache) ...{
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    };
+  }
+
+  Map<String, String> _freshQuery(Map<String, String>? query) {
+    return {...?query, '_t': DateTime.now().millisecondsSinceEpoch.toString()};
   }
 }

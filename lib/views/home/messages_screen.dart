@@ -60,6 +60,8 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
 
     final operation = () async {
       ref.invalidate(mobileMessagesInboxProvider);
+      ref.invalidate(mobileNotificationsProvider);
+      ref.invalidate(mobileNotificationsSummaryProvider);
       await ref.read(mobileMessagesInboxProvider.future);
     }();
 
@@ -118,9 +120,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
       final conversation = messagesAsMap(payload['conversation']);
       final conversationId = conversation['id']?.toString();
 
-      if (conversationId != null &&
-          conversationId.isNotEmpty &&
-          mounted) {
+      if (conversationId != null && conversationId.isNotEmpty && mounted) {
         await context.push(RouteNames.messageConversationPath(conversationId));
         await _refreshInbox();
       }
@@ -140,8 +140,10 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
   @override
   Widget build(BuildContext context) {
     final role = ref.watch(currentUserRoleProvider);
-    final realtimeStatus =
-        ref.read(chatRealtimeServiceProvider).statusNotifier.value;
+    final realtimeStatus = ref
+        .read(chatRealtimeServiceProvider)
+        .statusNotifier
+        .value;
     final messagingEnabled = role == 'student' || role == 'teacher';
     final inboxAsync = messagingEnabled
         ? ref.watch(mobileMessagesInboxProvider)
@@ -188,8 +190,9 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                   data: (payload) {
                     _syncRealtime(payload['realtime']);
                     final contacts = messagesAsList(payload['contacts']);
-                    final conversations =
-                        messagesAsList(payload['conversations']);
+                    final conversations = messagesAsList(
+                      payload['conversations'],
+                    );
                     final search = _searchQuery.trim().toLowerCase();
 
                     final filteredContacts = search.isEmpty
@@ -206,8 +209,9 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                     final filteredConversations = search.isEmpty
                         ? conversations
                         : conversations.where((conversation) {
-                            final participant =
-                                messagesAsMap(conversation['participant']);
+                            final participant = messagesAsMap(
+                              conversation['participant'],
+                            );
                             final combined = [
                               participant['full_name'],
                               participant['subtitle'],
@@ -232,7 +236,10 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                           },
                         ),
                         const SizedBox(height: 20),
-                        Text('Start a New Chat', style: AppTextStyles.headingMedium),
+                        Text(
+                          'Start a New Chat',
+                          style: AppTextStyles.headingMedium,
+                        ),
                         const SizedBox(height: 10),
                         if (filteredContacts.isEmpty)
                           const MessagesEmptyState(
@@ -264,8 +271,10 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                             ),
                           ),
                         const SizedBox(height: 20),
-                        Text('Recent Conversations',
-                            style: AppTextStyles.headingMedium),
+                        Text(
+                          'Recent Conversations',
+                          style: AppTextStyles.headingMedium,
+                        ),
                         const SizedBox(height: 10),
                         if (filteredConversations.isEmpty)
                           const MessagesEmptyState(

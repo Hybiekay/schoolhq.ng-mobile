@@ -40,17 +40,23 @@ class ParentSelectedChildController extends StateNotifier<String?> {
   }
 }
 
-final mobileDashboardProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+final mobileDashboardProvider = FutureProvider<Map<String, dynamic>>((
+  ref,
+) async {
   final role = ref.watch(currentUserRoleProvider);
   return ref.read(mobileRepositoryProvider).fetchDashboard(role);
 });
 
-final mobileTimetableProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+final mobileTimetableProvider = FutureProvider<Map<String, dynamic>>((
+  ref,
+) async {
   final role = ref.watch(currentUserRoleProvider);
   return ref.read(mobileRepositoryProvider).fetchTimetable(role);
 });
 
-final mobileCalendarProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+final mobileCalendarProvider = FutureProvider<Map<String, dynamic>>((
+  ref,
+) async {
   final role = ref.watch(currentUserRoleProvider);
   return ref.read(mobileRepositoryProvider).fetchCalendar(role);
 });
@@ -72,7 +78,9 @@ final mobileClassesProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   return ref.read(mobileRepositoryProvider).fetchClasses(role);
 });
 
-final parentChildrenProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+final parentChildrenProvider = FutureProvider<List<Map<String, dynamic>>>((
+  ref,
+) async {
   final role = ref.watch(currentUserRoleProvider);
   if (role != 'parent') return const [];
 
@@ -95,7 +103,9 @@ final parentChildrenProvider = FutureProvider<List<Map<String, dynamic>>>((ref) 
   return parsed;
 });
 
-final mobileAttendanceProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+final mobileAttendanceProvider = FutureProvider<Map<String, dynamic>>((
+  ref,
+) async {
   final role = ref.watch(currentUserRoleProvider);
   String? childId;
   if (role == 'parent') {
@@ -133,7 +143,9 @@ final mobileExamDetailProvider =
 final resultsSelectedSessionIdProvider = StateProvider<String?>((ref) => null);
 final resultsSelectedTermIdProvider = StateProvider<String?>((ref) => null);
 
-final mobileSessionsMetaProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+final mobileSessionsMetaProvider = FutureProvider<List<Map<String, dynamic>>>((
+  ref,
+) async {
   final data = await ref.read(mobileRepositoryProvider).fetchSessionsMeta();
   final sessions = (data['sessions'] as List?) ?? const [];
   final parsed = sessions
@@ -187,7 +199,9 @@ final mobileFeesProvider = FutureProvider<Map<String, dynamic>>((ref) async {
       .fetchFees(role, childId: childId, sessionId: sessionId, termId: termId);
 });
 
-final mobileTermResultsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+final mobileTermResultsProvider = FutureProvider<Map<String, dynamic>>((
+  ref,
+) async {
   final role = ref.watch(currentUserRoleProvider);
   final sessionId = ref.watch(resultsSelectedSessionIdProvider);
   final termId = ref.watch(resultsSelectedTermIdProvider);
@@ -210,7 +224,9 @@ final mobileTermResultsProvider = FutureProvider<Map<String, dynamic>>((ref) asy
       );
 });
 
-final mobileSessionResultsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+final mobileSessionResultsProvider = FutureProvider<Map<String, dynamic>>((
+  ref,
+) async {
   final role = ref.watch(currentUserRoleProvider);
   final sessionId = ref.watch(resultsSelectedSessionIdProvider);
 
@@ -227,7 +243,9 @@ final mobileSessionResultsProvider = FutureProvider<Map<String, dynamic>>((ref) 
       .fetchSessionResults(role, childId: childId, sessionId: sessionId);
 });
 
-final mobileMessagesInboxProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+final mobileMessagesInboxProvider = FutureProvider<Map<String, dynamic>>((
+  ref,
+) async {
   final role = ref.watch(currentUserRoleProvider);
   if (role != 'student' && role != 'teacher') {
     return {
@@ -239,8 +257,36 @@ final mobileMessagesInboxProvider = FutureProvider<Map<String, dynamic>>((ref) a
   return ref.read(mobileRepositoryProvider).fetchMessagesInbox();
 });
 
+final mobileNotificationsProvider = FutureProvider<Map<String, dynamic>>((
+  ref,
+) async {
+  return ref.read(mobileRepositoryProvider).fetchNotifications();
+});
+
+final mobileNotificationsSummaryProvider = FutureProvider<Map<String, dynamic>>(
+  (ref) async {
+    final data = await ref
+        .read(mobileRepositoryProvider)
+        .fetchNotifications(limit: 6);
+    final summary = data['summary'];
+
+    if (summary is Map<String, dynamic>) {
+      return summary;
+    }
+
+    if (summary is Map) {
+      return Map<String, dynamic>.from(summary);
+    }
+
+    return {'unread_count': 0, 'total_count': 0};
+  },
+);
+
 final mobileMessageConversationProvider =
-    FutureProvider.family<Map<String, dynamic>, String>((ref, conversationId) async {
+    FutureProvider.family<Map<String, dynamic>, String>((
+      ref,
+      conversationId,
+    ) async {
       final role = ref.watch(currentUserRoleProvider);
       if (role != 'student' && role != 'teacher') {
         return {'conversation': null};

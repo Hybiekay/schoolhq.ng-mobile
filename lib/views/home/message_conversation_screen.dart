@@ -16,10 +16,7 @@ import 'package:schoolhq_ng/views/home/messages/widgets/messages_empty_state.dar
 class MessageConversationScreen extends ConsumerStatefulWidget {
   final String conversationId;
 
-  const MessageConversationScreen({
-    super.key,
-    required this.conversationId,
-  });
+  const MessageConversationScreen({super.key, required this.conversationId});
 
   @override
   ConsumerState<MessageConversationScreen> createState() =>
@@ -32,6 +29,7 @@ class _MessageConversationScreenState
   final ScrollController _scrollController = ScrollController();
   bool _isSending = false;
   int _lastRenderedMessageCount = -1;
+  Map<String, dynamic>? _conversationOverride;
   StreamSubscription? _realtimeEventsSubscription;
   late final VoidCallback _realtimeStatusListener;
   Future<void>? _refreshConversationOperation;
@@ -83,10 +81,32 @@ class _MessageConversationScreenState
 
     final operation = () async {
       ref.invalidate(mobileMessageConversationProvider(widget.conversationId));
-      await ref.read(
+      final refreshedPayload = await ref.read(
         mobileMessageConversationProvider(widget.conversationId).future,
       );
       ref.invalidate(mobileMessagesInboxProvider);
+      ref.invalidate(mobileNotificationsProvider);
+      ref.invalidate(mobileNotificationsSummaryProvider);
+
+      if (mounted) {
+        final refreshedConversation = messagesAsMap(
+          refreshedPayload['conversation'],
+        );
+        final refreshedMessages = messagesAsList(
+          refreshedConversation['messages'],
+        );
+        final optimisticMessages = messagesAsList(
+          _conversationOverride?['messages'],
+        );
+
+        if (optimisticMessages.isEmpty ||
+            _containsAllMessageIds(refreshedMessages, optimisticMessages)) {
+          setState(() {
+            _conversationOverride = null;
+          });
+        }
+      }
+
       _scrollToLatest();
     }();
 
@@ -116,12 +136,33 @@ class _MessageConversationScreenState
     });
 
     try {
-      await ref.read(mobileRepositoryProvider).sendMessage(
-            conversationId: widget.conversationId,
-            body: body,
+      final response = await ref
+          .read(mobileRepositoryProvider)
+          .sendMessage(conversationId: widget.conversationId, body: body);
+      final sentMessage = messagesAsMap(response['message']);
+      final currentPayload = ref
+          .read(mobileMessageConversationProvider(widget.conversationId))
+          .asData
+          ?.value;
+      final baseConversation = _displayConversation(
+        messagesAsMap(currentPayload?['conversation']),
+      );
+
+      if (mounted) {
+        setState(() {
+          _conversationOverride = _appendMessageToConversation(
+            conversation: baseConversation,
+            message: sentMessage,
           );
+        });
+      }
+
       _composerController.clear();
-      await _refreshConversation();
+      ref.invalidate(mobileMessagesInboxProvider);
+      ref.invalidate(mobileNotificationsProvider);
+      ref.invalidate(mobileNotificationsSummaryProvider);
+      unawaited(_refreshConversation());
+      _scrollToLatest();
     } catch (error) {
       if (mounted) {
         AppSnackBar.error(context, error.toString());
@@ -135,24 +176,60 @@ class _MessageConversationScreenState
     }
   }
 
-  void _scrollToLatest() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) {
-        return;
-      }
+  void _scrollToLatest({bool animated = true}) {
+    unawaited(_performScrollToLatest(animated: animated));
+  }
 
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 260),
-        curve: Curves.easeOut,
+  Future<void> _performScrollToLatest({required bool animated}) async {
+    if (!mounted) {
+      return;
+    }
+
+    await WidgetsBinding.instance.endOfFrame;
+    await WidgetsBinding.instance.endOfFrame;
+
+    if (!_scrollController.hasClients) {
+      return;
+    }
+
+    final targetOffset = _scrollController.position.maxScrollExtent;
+
+    if (!animated) {
+      _scrollController.jumpTo(targetOffset);
+      return;
+    }
+
+    final currentOffset = _scrollController.offset;
+    if ((targetOffset - currentOffset).abs() < 4) {
+      return;
+    }
+
+    try {
+      await _scrollController.animateTo(
+        targetOffset,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
       );
-    });
+    } catch (_) {
+      return;
+    }
+
+    if (!_scrollController.hasClients) {
+      return;
+    }
+
+    final settledOffset = _scrollController.position.maxScrollExtent;
+    if ((_scrollController.offset - settledOffset).abs() > 4) {
+      _scrollController.jumpTo(settledOffset);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final realtimeStatus =
-        ref.read(chatRealtimeServiceProvider).statusNotifier.value;
+    final realtimeStatus = ref
+        .read(chatRealtimeServiceProvider)
+        .statusNotifier
+        .value;
     final conversationAsync = ref.watch(
       mobileMessageConversationProvider(widget.conversationId),
     );
@@ -190,12 +267,15 @@ class _MessageConversationScreenState
             ),
             data: (payload) {
               _syncRealtime(payload['realtime']);
-              final conversation = messagesAsMap(payload['conversation']);
+              final conversation = _displayConversation(
+                messagesAsMap(payload['conversation']),
+              );
               final participant = messagesAsMap(conversation['participant']);
               final messages = messagesAsList(conversation['messages']);
-              if (_lastRenderedMessageCount != messages.length) {
+              final previousMessageCount = _lastRenderedMessageCount;
+              if (previousMessageCount != messages.length) {
                 _lastRenderedMessageCount = messages.length;
-                _scrollToLatest();
+                _scrollToLatest(animated: previousMessageCount >= 0);
               }
 
               return Column(
@@ -232,10 +312,11 @@ class _MessageConversationScreenState
                                   ),
                                 ]
                               : messages
-                                  .map(
-                                    (message) => MessageBubble(message: message),
-                                  )
-                                  .toList(),
+                                    .map(
+                                      (message) =>
+                                          MessageBubble(message: message),
+                                    )
+                                    .toList(),
                         ),
                       ),
                     ),
@@ -253,5 +334,58 @@ class _MessageConversationScreenState
         ),
       ),
     );
+  }
+
+  Map<String, dynamic> _displayConversation(Map<String, dynamic> conversation) {
+    final override = _conversationOverride;
+    if (override == null || override.isEmpty) {
+      return conversation;
+    }
+
+    final providerMessages = messagesAsList(conversation['messages']);
+    final optimisticMessages = messagesAsList(override['messages']);
+
+    if (_containsAllMessageIds(providerMessages, optimisticMessages) &&
+        providerMessages.length >= optimisticMessages.length) {
+      return conversation;
+    }
+
+    return override;
+  }
+
+  Map<String, dynamic> _appendMessageToConversation({
+    required Map<String, dynamic> conversation,
+    required Map<String, dynamic> message,
+  }) {
+    final existingMessages = messagesAsList(conversation['messages']);
+    final messageId = message['id']?.toString();
+
+    final alreadyExists = existingMessages.any(
+      (item) => item['id']?.toString() == messageId,
+    );
+
+    return {
+      ...conversation,
+      'messages': alreadyExists
+          ? existingMessages
+          : [...existingMessages, message],
+    };
+  }
+
+  bool _containsAllMessageIds(
+    List<Map<String, dynamic>> currentMessages,
+    List<Map<String, dynamic>> expectedMessages,
+  ) {
+    final currentIds = currentMessages
+        .map((message) => message['id']?.toString())
+        .whereType<String>()
+        .toSet();
+
+    final expectedIds = expectedMessages
+        .map((message) => message['id']?.toString())
+        .whereType<String>()
+        .toSet();
+
+    return expectedIds.every(currentIds.contains);
   }
 }
