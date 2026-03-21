@@ -60,6 +60,7 @@ class GamesScreen extends ConsumerWidget {
                 GamesHeroCard(
                   role: role,
                   onPlayMathSprint: () => context.push(RouteNames.mathSprint),
+                  onPlayWordBuilder: () => context.push(RouteNames.wordBuilder),
                 ),
                 const SizedBox(height: 12),
                 Container(
@@ -83,14 +84,14 @@ class GamesScreen extends ConsumerWidget {
                         height: 44,
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
+                            colors: [Color(0xFF059669), Color(0xFF22C55E)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: const Icon(
-                          Icons.calculate_rounded,
+                          Icons.spellcheck_rounded,
                           color: Colors.white,
                         ),
                       ),
@@ -100,7 +101,7 @@ class GamesScreen extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Math Sprint is live',
+                              'Word Builder is live',
                               style: AppTextStyles.body.copyWith(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
@@ -108,7 +109,7 @@ class GamesScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Tap the first featured mode to launch a fast arithmetic burst.',
+                              'Tap the featured language mode to build words, sharpen vocabulary, and stay in rhythm.',
                               style: AppTextStyles.small.copyWith(
                                 fontSize: 11,
                                 color: AppColors.textSecondary,
@@ -139,7 +140,7 @@ class GamesScreen extends ConsumerWidget {
                 Text('Featured Modes', style: AppTextStyles.headingMedium),
                 const SizedBox(height: 6),
                 Text(
-                  'Math Sprint is ready now. The rest of the arcade is being unlocked next.',
+                  'Math Sprint and Word Builder are ready now. More arcade modes are being unlocked next.',
                   style: AppTextStyles.subtitle,
                 ),
                 const SizedBox(height: 12),

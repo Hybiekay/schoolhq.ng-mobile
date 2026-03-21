@@ -25,7 +25,8 @@ final gamesFeaturedModes = <Map<String, dynamic>>[
       end: Alignment.bottomRight,
     ),
     'badge': 'Language Boost',
-    'action': 'Coming soon',
+    'route': RouteNames.wordBuilder,
+    'action': 'Build words',
   },
   {
     'title': 'Science Quest',

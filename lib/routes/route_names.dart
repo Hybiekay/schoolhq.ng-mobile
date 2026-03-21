@@ -34,6 +34,7 @@ class RouteNames {
   static const examAttempt = '/exams/attempt/:attemptId';
   static const messageConversation = '/messages/conversations/:conversationId';
   static const mathSprint = '/games/math-sprint';
+  static const wordBuilder = '/games/word-builder';
 
   static String examDetailPath(String examId) => '/exams/$examId';
   static String examAttemptPath(String attemptId) =>

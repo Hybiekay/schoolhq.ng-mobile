@@ -4,19 +4,21 @@ import 'package:schoolhq_ng/core/constants/constants.dart';
 class GamesHeroCard extends StatelessWidget {
   final String role;
   final VoidCallback onPlayMathSprint;
+  final VoidCallback? onPlayWordBuilder;
 
   const GamesHeroCard({
     super.key,
     required this.role,
     required this.onPlayMathSprint,
+    this.onPlayWordBuilder,
   });
 
   @override
   Widget build(BuildContext context) {
     final compact = MediaQuery.sizeOf(context).width < 380;
     final copy = role == 'teacher'
-        ? 'Launch quick warm-up rounds before class, revision breaks, or team challenges.'
-        : 'Jump into fast challenge rounds, build streaks, and sharpen your speed.';
+        ? 'Launch quick arithmetic bursts and word-building runs before class, revision breaks, or team challenges.'
+        : 'Jump into fast number games and vocabulary runs, then keep your streak sharp.';
 
     return Container(
       clipBehavior: Clip.antiAlias,
@@ -113,34 +115,151 @@ class GamesHeroCard extends StatelessWidget {
                 ],
               ),
               SizedBox(height: compact ? 14 : 18),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: onPlayMathSprint,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppColors.textPrimary,
-                        elevation: 0,
-                        padding: EdgeInsets.symmetric(
-                          vertical: compact ? 12 : 14,
+              if (onPlayWordBuilder == null)
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: onPlayMathSprint,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.textPrimary,
+                          elevation: 0,
+                          padding: EdgeInsets.symmetric(
+                            vertical: compact ? 12 : 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                      ),
-                      icon: const Icon(Icons.play_arrow_rounded),
-                      label: Text(
-                        'Play Math Sprint',
-                        style: AppTextStyles.button.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w700,
+                        icon: const Icon(Icons.play_arrow_rounded),
+                        label: Text(
+                          'Play Math Sprint',
+                          style: AppTextStyles.button.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                )
+              else if (compact)
+                Column(
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: onPlayMathSprint,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.textPrimary,
+                          elevation: 0,
+                          padding: EdgeInsets.symmetric(
+                            vertical: compact ? 12 : 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                        ),
+                        icon: const Icon(Icons.calculate_rounded),
+                        label: Text(
+                          'Play Math Sprint',
+                          style: AppTextStyles.button.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: TextButton.icon(
+                        onPressed: onPlayWordBuilder,
+                        style: TextButton.styleFrom(
+                          backgroundColor: Colors.white.withOpacity(0.12),
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(
+                            vertical: compact ? 12 : 14,
+                            horizontal: 16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                            side: BorderSide(
+                              color: Colors.white.withOpacity(0.18),
+                            ),
+                          ),
+                        ),
+                        icon: const Icon(Icons.spellcheck_rounded),
+                        label: Text(
+                          'Play Word Builder',
+                          style: AppTextStyles.button.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: onPlayMathSprint,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.textPrimary,
+                          elevation: 0,
+                          padding: EdgeInsets.symmetric(
+                            vertical: compact ? 12 : 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                        ),
+                        icon: const Icon(Icons.calculate_rounded),
+                        label: Text(
+                          'Play Math Sprint',
+                          style: AppTextStyles.button.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextButton.icon(
+                        onPressed: onPlayWordBuilder,
+                        style: TextButton.styleFrom(
+                          backgroundColor: Colors.white.withOpacity(0.12),
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(
+                            vertical: compact ? 12 : 14,
+                            horizontal: 16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                            side: BorderSide(
+                              color: Colors.white.withOpacity(0.18),
+                            ),
+                          ),
+                        ),
+                        icon: const Icon(Icons.spellcheck_rounded),
+                        label: Text(
+                          'Play Word Builder',
+                          style: AppTextStyles.button.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
         ],

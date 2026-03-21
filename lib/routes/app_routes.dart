@@ -11,6 +11,7 @@ import 'package:schoolhq_ng/views/home/courses_screen.dart';
 import 'package:schoolhq_ng/views/home/exams_screen.dart';
 import 'package:schoolhq_ng/views/home/games_screen.dart';
 import 'package:schoolhq_ng/views/home/games/math_sprint_screen.dart';
+import 'package:schoolhq_ng/views/home/games/word_builder_screen.dart';
 import 'package:schoolhq_ng/views/home/home_screen.dart';
 import 'package:schoolhq_ng/views/home/message_conversation_screen.dart';
 import 'package:schoolhq_ng/views/home/messages_screen.dart';
@@ -106,6 +107,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteNames.mathSprint,
         builder: (_, __) => const MathSprintScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.wordBuilder,
+        builder: (_, __) => const WordBuilderScreen(),
       ),
 
       ShellRoute(
