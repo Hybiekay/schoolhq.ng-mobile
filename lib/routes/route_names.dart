@@ -33,6 +33,7 @@ class RouteNames {
   static const examDetail = '/exams/:examId';
   static const examAttempt = '/exams/attempt/:attemptId';
   static const messageConversation = '/messages/conversations/:conversationId';
+  static const mathSprint = '/games/math-sprint';
 
   static String examDetailPath(String examId) => '/exams/$examId';
   static String examAttemptPath(String attemptId) =>

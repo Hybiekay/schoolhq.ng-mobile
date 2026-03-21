@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:schoolhq_ng/routes/route_names.dart';
 
 final gamesFeaturedModes = <Map<String, dynamic>>[
   {
@@ -11,6 +12,8 @@ final gamesFeaturedModes = <Map<String, dynamic>>[
       end: Alignment.bottomRight,
     ),
     'badge': 'Speed Lab',
+    'route': RouteNames.mathSprint,
+    'action': 'Start sprint',
   },
   {
     'title': 'Word Builder',
@@ -22,6 +25,7 @@ final gamesFeaturedModes = <Map<String, dynamic>>[
       end: Alignment.bottomRight,
     ),
     'badge': 'Language Boost',
+    'action': 'Coming soon',
   },
   {
     'title': 'Science Quest',
@@ -33,6 +37,7 @@ final gamesFeaturedModes = <Map<String, dynamic>>[
       end: Alignment.bottomRight,
     ),
     'badge': 'Discovery Mode',
+    'action': 'Coming soon',
   },
 ];
 
@@ -42,19 +47,7 @@ final gamesDailyMissions = <Map<String, dynamic>>[
     'value': '7 days',
     'icon': Icons.local_fire_department_rounded,
   },
-  {
-    'title': 'Quick duels',
-    'value': '12 ready',
-    'icon': Icons.flash_on_rounded,
-  },
-  {
-    'title': 'Warm-up time',
-    'value': '5 mins',
-    'icon': Icons.timer_rounded,
-  },
-  {
-    'title': 'Reward stars',
-    'value': '128',
-    'icon': Icons.auto_awesome_rounded,
-  },
+  {'title': 'Quick duels', 'value': '12 ready', 'icon': Icons.flash_on_rounded},
+  {'title': 'Warm-up time', 'value': '5 mins', 'icon': Icons.timer_rounded},
+  {'title': 'Reward stars', 'value': '128', 'icon': Icons.auto_awesome_rounded},
 ];

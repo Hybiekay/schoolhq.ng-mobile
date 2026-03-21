@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flint_client/flint_client.dart';
 import 'package:hive/hive.dart';
 import 'package:schoolhq_ng/core/hive/hive_key.dart';
@@ -32,6 +34,27 @@ class MobileRepository {
     final response = await client.post<Map<String, dynamic>>(
       path,
       body: body,
+      queryParameters: query,
+      headers: _requestHeaders(),
+    );
+
+    if (!response.success || response.data == null) {
+      throw Exception(response.error?.message ?? 'Request failed');
+    }
+
+    return Map<String, dynamic>.from(response.data!);
+  }
+
+  Future<Map<String, dynamic>> postMultipart(
+    String path, {
+    Map<String, dynamic>? body,
+    Map<String, File>? files,
+    Map<String, String>? query,
+  }) async {
+    final response = await client.post<Map<String, dynamic>>(
+      path,
+      body: body,
+      files: files,
       queryParameters: query,
       headers: _requestHeaders(),
     );
@@ -197,6 +220,37 @@ class MobileRepository {
         );
       default:
         throw Exception('Role $role is not supported in mobile MVP.');
+    }
+  }
+
+  Future<Map<String, dynamic>> submitFeePayment({
+    required String role,
+    required String feeId,
+    String? childId,
+    required double amount,
+    required String receiptPath,
+  }) {
+    final body = <String, dynamic>{'amount': amount};
+    final files = <String, File>{'receipt': File(receiptPath)};
+
+    switch (role.toLowerCase()) {
+      case 'student':
+        return postMultipart(
+          '/mobile/student/fees/$feeId/pay',
+          body: body,
+          files: files,
+        );
+      case 'parent':
+        if (childId == null || childId.isEmpty) {
+          throw Exception('Parent payments require a child selection.');
+        }
+        return postMultipart(
+          '/mobile/parent/children/$childId/fees/$feeId/pay',
+          body: body,
+          files: files,
+        );
+      default:
+        throw Exception('Role $role is not supported for fee payments.');
     }
   }
 

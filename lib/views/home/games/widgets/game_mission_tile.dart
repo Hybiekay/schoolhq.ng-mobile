@@ -4,17 +4,15 @@ import 'package:schoolhq_ng/core/constants/constants.dart';
 class GameMissionTile extends StatelessWidget {
   final Map<String, dynamic> mission;
 
-  const GameMissionTile({
-    super.key,
-    required this.mission,
-  });
+  const GameMissionTile({super.key, required this.mission});
 
   @override
   Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width < 380;
     final icon = mission['icon'] as IconData? ?? Icons.star_rounded;
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(compact ? 12 : 14),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(20),
@@ -23,8 +21,8 @@ class GameMissionTile extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: compact ? 38 : 42,
+            height: compact ? 38 : 42,
             decoration: BoxDecoration(
               color: AppColors.accent.withOpacity(0.12),
               borderRadius: BorderRadius.circular(14),
@@ -39,6 +37,7 @@ class GameMissionTile extends StatelessWidget {
                 Text(
                   (mission['title'] ?? 'Mission').toString(),
                   style: AppTextStyles.body.copyWith(
+                    fontSize: compact ? 14 : 16,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -46,6 +45,7 @@ class GameMissionTile extends StatelessWidget {
                 Text(
                   (mission['value'] ?? '').toString(),
                   style: AppTextStyles.small.copyWith(
+                    fontSize: 11,
                     color: AppColors.textSecondary,
                     fontWeight: FontWeight.w600,
                   ),

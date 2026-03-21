@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:schoolhq_ng/core/constants/constants.dart';
+import 'package:schoolhq_ng/core/feedback/app_snackbar.dart';
 import 'package:schoolhq_ng/core/formatters/school_currency_formatter.dart';
 import 'package:schoolhq_ng/providers/mobile_provider.dart';
 import 'package:schoolhq_ng/views/home/shared/widgets/mobile_top_action_bar.dart';
@@ -111,7 +113,11 @@ class TestsScreen extends ConsumerWidget {
                 loading: () =>
                     const _LoadingCard(label: 'Loading fee records...'),
                 error: (error, _) => _ErrorCard(message: error.toString()),
-                data: (data) => _FeesContent(data: data, role: role),
+                data: (data) => _FeesContent(
+                  data: data,
+                  role: role,
+                  selectedChildId: selectedChildId,
+                ),
               ),
             ],
           ),
@@ -124,8 +130,13 @@ class TestsScreen extends ConsumerWidget {
 class _FeesContent extends StatelessWidget {
   final Map<String, dynamic> data;
   final String role;
+  final String? selectedChildId;
 
-  const _FeesContent({required this.data, required this.role});
+  const _FeesContent({
+    required this.data,
+    required this.role,
+    required this.selectedChildId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -133,6 +144,7 @@ class _FeesContent extends StatelessWidget {
     final subjectEntity = role == 'parent'
         ? _asMap(data['child'])
         : _asMap(data['student']);
+    final bankDetails = _asMap(data['bank_details']);
     final items = _asList(data['items']);
 
     return Column(
@@ -144,6 +156,8 @@ class _FeesContent extends StatelessWidget {
           paid: _num(summary['paid']),
           balance: _num(summary['balance']),
         ),
+        const SizedBox(height: 12),
+        _BankDetailsCard(bankDetails: bankDetails),
         const SizedBox(height: 16),
         Text('Fee Items', style: AppTextStyles.headingMedium),
         const SizedBox(height: 8),
@@ -155,7 +169,12 @@ class _FeesContent extends StatelessWidget {
           ...items.map(
             (item) => Padding(
               padding: const EdgeInsets.only(bottom: 10),
-              child: _FeeItemTile(item: item),
+              child: _FeeItemTile(
+                item: item,
+                bankDetails: bankDetails,
+                role: role,
+                selectedChildId: selectedChildId,
+              ),
             ),
           ),
       ],
@@ -221,6 +240,71 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
+class _BankDetailsCard extends StatelessWidget {
+  final Map<String, dynamic> bankDetails;
+
+  const _BankDetailsCard({required this.bankDetails});
+
+  @override
+  Widget build(BuildContext context) {
+    final isConfigured = bankDetails['is_configured'] == true;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isConfigured
+              ? const Color(0xFF99F6E4)
+              : const Color(0xFFFCD34D),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'School transfer details',
+            style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          if (isConfigured) ...[
+            Text(
+              'Bank: ${(bankDetails['bank_name'] ?? 'Not set').toString()}',
+              style: AppTextStyles.body,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Account name: ${(bankDetails['account_name'] ?? 'Not set').toString()}',
+              style: AppTextStyles.body,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Account number: ${(bankDetails['account_number'] ?? 'Not set').toString()}',
+              style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700),
+            ),
+            if ((bankDetails['instructions'] ?? '')
+                .toString()
+                .trim()
+                .isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  bankDetails['instructions'].toString(),
+                  style: AppTextStyles.small,
+                ),
+              ),
+          ] else
+            Text(
+              'The school has not added bank transfer details yet.',
+              style: AppTextStyles.small.copyWith(color: AppColors.error),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _MoneyChip extends StatelessWidget {
   final String label;
   final double value;
@@ -259,12 +343,21 @@ class _MoneyChip extends StatelessWidget {
 
 class _FeeItemTile extends StatelessWidget {
   final Map<String, dynamic> item;
+  final Map<String, dynamic> bankDetails;
+  final String role;
+  final String? selectedChildId;
 
-  const _FeeItemTile({required this.item});
+  const _FeeItemTile({
+    required this.item,
+    required this.bankDetails,
+    required this.role,
+    required this.selectedChildId,
+  });
 
   @override
   Widget build(BuildContext context) {
     final fee = _asMap(item['fee_structure']);
+    final payments = _asList(item['payments']);
     final status = (item['status'] ?? 'unknown').toString().toLowerCase();
     final color = switch (status) {
       'paid' => const Color(0xFF16A34A),
@@ -316,7 +409,7 @@ class _FeeItemTile extends StatelessWidget {
               fee['class']?.toString(),
               fee['term']?.toString(),
               fee['session']?.toString(),
-            ].where((e) => e != null && e.isNotEmpty).join(' • '),
+            ].where((e) => e != null && e.isNotEmpty).join(' | '),
             style: AppTextStyles.small,
           ),
           const SizedBox(height: 10),
@@ -329,7 +422,93 @@ class _FeeItemTile extends StatelessWidget {
               Expanded(child: _miniAmount('Balance', _num(item['balance']))),
             ],
           ),
+          if (payments.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Recent payments',
+              style: AppTextStyles.small.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            ...payments
+                .take(3)
+                .map(
+                  (payment) => Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _money(_num(payment['amount'])),
+                              style: AppTextStyles.body.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              [
+                                    (payment['method'] ?? 'payment')
+                                        .toString()
+                                        .replaceAll('_', ' '),
+                                    payment['payment_date']?.toString(),
+                                    if ((payment['receipt_name'] ?? '')
+                                        .toString()
+                                        .trim()
+                                        .isNotEmpty)
+                                      payment['receipt_name']?.toString(),
+                                  ]
+                                  .where((e) => e != null && e.isNotEmpty)
+                                  .join(' | '),
+                              textAlign: TextAlign.right,
+                              style: AppTextStyles.small,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+          ],
+          if (_num(item['balance']) > 0) ...[
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => _openPaymentSheet(context),
+                icon: const Icon(Icons.payments_outlined),
+                label: Text(
+                  'Pay now',
+                  style: AppTextStyles.body.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
+      ),
+    );
+  }
+
+  Future<void> _openPaymentSheet(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _FeePaymentSheet(
+        fee: item,
+        bankDetails: bankDetails,
+        role: role,
+        selectedChildId: selectedChildId,
       ),
     );
   }
@@ -345,6 +524,213 @@ class _FeeItemTile extends StatelessWidget {
           style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
         ),
       ],
+    );
+  }
+}
+
+class _FeePaymentSheet extends ConsumerStatefulWidget {
+  final Map<String, dynamic> fee;
+  final Map<String, dynamic> bankDetails;
+  final String role;
+  final String? selectedChildId;
+
+  const _FeePaymentSheet({
+    required this.fee,
+    required this.bankDetails,
+    required this.role,
+    required this.selectedChildId,
+  });
+
+  @override
+  ConsumerState<_FeePaymentSheet> createState() => _FeePaymentSheetState();
+}
+
+class _FeePaymentSheetState extends ConsumerState<_FeePaymentSheet> {
+  late final TextEditingController _amountController;
+  String? _receiptPath;
+  String? _receiptName;
+  bool _submitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _amountController = TextEditingController(
+      text: _num(widget.fee['balance']).toStringAsFixed(2),
+    );
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final amount = double.tryParse(_amountController.text.trim());
+    final balance = _num(widget.fee['balance']);
+    final isConfigured = widget.bankDetails['is_configured'] == true;
+
+    if (!isConfigured) {
+      AppSnackBar.error(
+        context,
+        'The school has not added bank transfer details yet.',
+      );
+      return;
+    }
+
+    if (amount == null || amount <= 0) {
+      AppSnackBar.error(context, 'Enter a valid payment amount.');
+      return;
+    }
+
+    if (amount > balance) {
+      AppSnackBar.error(
+        context,
+        'Payment amount cannot be more than the current balance.',
+      );
+      return;
+    }
+
+    if (_receiptPath == null || _receiptPath!.isEmpty) {
+      AppSnackBar.error(context, 'Upload the receipt or transfer proof.');
+      return;
+    }
+
+    setState(() => _submitting = true);
+
+    try {
+      await ref
+          .read(mobileRepositoryProvider)
+          .submitFeePayment(
+            role: widget.role,
+            feeId: (widget.fee['id'] ?? '').toString(),
+            childId: widget.selectedChildId,
+            amount: amount,
+            receiptPath: _receiptPath!,
+          );
+
+      ref.invalidate(mobileFeesProvider);
+      ref.invalidate(mobileDashboardProvider);
+
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        AppSnackBar.success(context, 'Payment recorded successfully.');
+      }
+    } catch (error) {
+      if (context.mounted) {
+        AppSnackBar.error(
+          context,
+          error.toString().replaceFirst('Exception: ', ''),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
+    }
+  }
+
+  Future<void> _pickReceipt() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['jpg', 'jpeg', 'png', 'pdf', 'webp'],
+    );
+
+    final file = result != null && result.files.isNotEmpty
+        ? result.files.first
+        : null;
+    final path = file?.path;
+
+    if (path == null || path.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _receiptPath = path;
+      _receiptName = file?.name;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final fee = _asMap(widget.fee['fee_structure']);
+    final bankDetails = widget.bankDetails;
+    final isConfigured = bankDetails['is_configured'] == true;
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 16, 16, bottomInset + 16),
+      child: Material(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Submit payment proof for ${(fee['name'] ?? 'fee item').toString()}',
+                style: AppTextStyles.headingMedium,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Balance: ${_money(_num(widget.fee['balance']))}',
+                style: AppTextStyles.subtitle,
+              ),
+              const SizedBox(height: 18),
+              _BankDetailsCard(bankDetails: bankDetails),
+              const SizedBox(height: 18),
+              TextField(
+                controller: _amountController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: const InputDecoration(
+                  labelText: 'Amount',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 14),
+              OutlinedButton.icon(
+                onPressed: _submitting || !isConfigured ? null : _pickReceipt,
+                icon: const Icon(Icons.upload_file_outlined),
+                label: Text(
+                  _receiptName ?? 'Upload receipt or transfer proof',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Accepted formats: JPG, PNG, WEBP, PDF',
+                style: AppTextStyles.small,
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _submitting || !isConfigured ? null : _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: _submitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Submit payment proof'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
